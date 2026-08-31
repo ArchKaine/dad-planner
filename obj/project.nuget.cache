@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "dgSpecHash": "2BOcEde7mcU=",
+  "success": true,
+  "projectFilePath": "/home/brian/wankplanner/wankplanner.csproj",
+  "expectedPackageFiles": [
+    "/home/brian/.nuget/packages/microsoft.data.sqlite/10.0.11/microsoft.data.sqlite.10.0.11.nupkg.sha512",
+    "/home/brian/.nuget/packages/microsoft.data.sqlite.core/10.0.11/microsoft.data.sqlite.core.10.0.11.nupkg.sha512",
+    "/home/brian/.nuget/packages/photino.native/3.1.5/photino.native.3.1.5.nupkg.sha512",
+    "/home/brian/.nuget/packages/photino.net/3.1.13/photino.net.3.1.13.nupkg.sha512",
+    "/home/brian/.nuget/packages/sqlitepclraw.bundle_e_sqlite3/2.1.12/sqlitepclraw.bundle_e_sqlite3.2.1.12.nupkg.sha512",
+    "/home/brian/.nuget/packages/sqlitepclraw.core/2.1.12/sqlitepclraw.core.2.1.12.nupkg.sha512",
+    "/home/brian/.nuget/packages/sqlitepclraw.lib.e_sqlite3/2.1.12/sqlitepclraw.lib.e_sqlite3.2.1.12.nupkg.sha512",
+    "/home/brian/.nuget/packages/sqlitepclraw.provider.e_sqlite3/2.1.12/sqlitepclraw.provider.e_sqlite3.2.1.12.nupkg.sha512"
+  ],
+  "logs": []
+}

@@ -1,8 +1,8 @@
 # Sexual Health & Frequency Tracker (dad-planner)
 
-A highly over-engineered, offline-first orgasm and sexual frequency tracker built natively for Linux/Wayland. 
+Standard calendar apps aren't built for clinical reproductive health. When you need to manage strict medical testing requirements (like OHSU semen analysis protocols) or maintain baseline prostate health with rigid 72-hour turnover limits, you need precise tracking. More importantly, you need that data kept completely off the cloud.
 
-Designed to track personal habits, enforce maximum time limits between sessions, and provide local statistical analysis without sending highly private biological data to the cloud.
+This is a highly over-engineered, offline-first sexual frequency and orgasm tracker built natively for Linux/Wayland. It enforces routine health cycles, manages mandatory abstinence windows for clinical targets, and provides local statistical analysis—all while ensuring your most private biological data never leaves your machine.
 
 ## 🏗️ Architecture Stack
 * **Backend:** C# / .NET 10.0 (Headless Background Daemon)
@@ -14,8 +14,8 @@ Designed to track personal habits, enforce maximum time limits between sessions,
 
 ## ✨ Key Features
 * **Telemetry HUD:** Real-time calculation of the time elapsed since your last climax, rolling averages, and maximum endurance gaps.
-* **The 72-Hour Limit:** Visual countdowns to ensure you don't go more than 3 days without a release, complete with desktop warnings.
-* **Clinical Blackout Mode:** Tracks mandatory abstinence windows and suppresses notifications prior to scheduled medical testing (e.g., OHSU semen analysis).
+* **The 72-Hour Limit:** Visual countdowns to ensure you don't go more than 3 days without a release to maintain baseline health, complete with desktop warnings.
+* **Clinical Blackout Mode:** Tracks mandatory abstinence windows and suppresses notifications prior to scheduled medical baseline testing (e.g., OHSU protocols).
 * **Automated Data Protection:** Integrated `systemd` timers for daily `.gz` database snapshots with a 365-day rolling retention policy.
 * **Stealth Mode (Panic Button):** Hardware hotkey (`Esc`) immediately blurs all telemetry data and obfuscates the UI if privacy is suddenly required.
 

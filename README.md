@@ -101,9 +101,3 @@ WEBKIT_DISABLE_COMPOSITING_MODE=1 python tray_app.py
 * **Panic Button:** Pressing `Escape` while the dashboard is open immediately blurs all telemetry data and masks the application interface.
 
 ```
-
-***
-
-You can overwrite your current `README.md` with this text and commit it directly on GitHub using the web interface, completely bypassing the local terminal Git authentication issues for now.
-
-```

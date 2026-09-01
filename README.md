@@ -1,8 +1,3 @@
-Here is the updated, comprehensive `README.md`. It maintains the enterprise sysadmin tone while providing exact, copy-pasteable instructions for the Wayland fixes, the Python virtual environment, and the systemd deployment.
-
----
-
-```markdown
 # PIMS (Personal Inventory & Maintenance System)
 
 An offline-first, enterprise-grade biological telemetry and logistics dashboard built natively for Linux/Wayland. 

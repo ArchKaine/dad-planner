@@ -1,4 +1,44 @@
-# Sexual Health & Frequency Tracker (dad-planner)
+# PIMS: Personal Inventory Maintenance System
+*(Formerly known as WankPlanner)*
+
+PIMS is a hyper-localized, offline-first telemetry and maintenance tracking application designed to monitor reproductive health cycles, biological baseline optimization, and supplement efficacy. It utilizes passive data entry to map recovery floors, turnover ceilings, and volume yields without relying on intrusive active monitoring.
+
+## Tech Stack
+* **Backend:** C# / .NET 8.0
+* **Desktop Shell:** Photino.NET (Cross-platform native OS windowing)
+* **Database:** SQLite (Local, air-gapped data persistence)
+* **Frontend:** HTML5, CSS3, Vanilla JavaScript, Chart.js
+
+## Core Features
+* **Air-gapped & Local:** No cloud sync, no external servers. All data is written to a local `inventory.db` SQLite file.
+* **Stealth Mode:** Hardware-level keybinding (Press `Escape`) instantly applies a CSS blur filter and disables pointer events on all sensitive data.
+* **Auto-Calibration Engine:** Mathematically analyzes historical recovery gaps to automatically recommend personalized Floor (minimum rest) and Ceiling (max limit) thresholds.
+* **Supplement Efficacy Analysis:** Runs statistical comparisons on contiguous datasets to prove whether Zinc increases volume yield and whether Maca Root accelerates recovery speed.
+* **Sandbox Simulation:** Built-in test generator that simulates 6 months (150 records) of biologically weighted data to test the math engines safely.
+
+## Build & Run Instructions
+
+### Prerequisites
+* .NET SDK 8.0+ installed on your system.
+
+### Running the Application
+To launch the desktop UI in development mode:
+```bash
+dotnet run
+
+Headless Quick-Log
+
+To log a standard "Maintenance" event instantly from the terminal or a bash script without opening the UI:
+Bash
+
+dotnet run -- --log
+
+Publishing a Standalone Executable
+
+To build a self-contained executable for Linux (Nobara/KDE):
+Bash
+
+dotnet publish -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true# Sexual Health & Frequency Tracker (dad-planner)
 
 Standard calendar apps aren't built for clinical reproductive health. When you need to manage strict medical testing requirements (like OHSU semen analysis protocols), maintain baseline prostate health with rigid turnover limits, and track fertility efforts, you need precise telemetry. More importantly, you need that data kept completely off the cloud.
 

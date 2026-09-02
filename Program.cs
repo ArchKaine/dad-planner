@@ -14,7 +14,9 @@ namespace WankPlanner
     {
         static string dbDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PIMS");
         static string dbPath = Path.Combine(dbDir, "inventory.db");
-        static string dbConnectionString = $"Data Source={dbPath};Mode=ReadWriteCreate;";
+        
+        // Windows Fix 1: Disable connection pooling to force the OS to release file locks instantly
+        static string dbConnectionString = $"Data Source={dbPath};Pooling=False;";
         static System.Timers.Timer? bgTimer;
 
         [STAThread]
@@ -36,16 +38,12 @@ namespace WankPlanner
                 catch { /* Failsafe */ }
             }
 
-            // Strip Read-Only attributes
+            // Windows Fix 2: Aggressively nuke ALL restrictive file attributes (ReadOnly, Hidden, System)
             if (File.Exists(dbPath))
             {
                 try
                 {
-                    FileAttributes attributes = File.GetAttributes(dbPath);
-                    if ((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
-                    {
-                        File.SetAttributes(dbPath, attributes & ~FileAttributes.ReadOnly);
-                    }
+                    File.SetAttributes(dbPath, FileAttributes.Normal);
                 }
                 catch { }
             }
@@ -71,191 +69,198 @@ namespace WankPlanner
             {
                 if (sender is not PhotinoWindow w) return;
 
-                var doc = JsonDocument.Parse(message);
-                string action = doc.RootElement.GetProperty("action").GetString() ?? "";
+                try
+                {
+                    var doc = JsonDocument.Parse(message);
+                    string action = doc.RootElement.GetProperty("action").GetString() ?? "";
 
-                if (action == "RESIZE_WINDOW")
-                {
-                    int width = doc.RootElement.GetProperty("width").GetInt32();
-                    int height = doc.RootElement.GetProperty("height").GetInt32();
-                    w.SetSize(width, height);
-                    return; 
-                }
-
-                // Open exactly ONE connection per UI action
-                using var db = new SqliteConnection(dbConnectionString);
-                db.Open();
-
-                if (action == "GET_STATE")
-                {
-                    SendState(w, db);
-                }
-                else if (action == "LOG_EVENT")
-                {
-                    string mode = doc.RootElement.GetProperty("mode").GetString() ?? "Maintenance";
-                    string volume = doc.RootElement.GetProperty("volume").GetString() ?? "Normal";
-                    int heatFlag = doc.RootElement.GetProperty("heatFlag").GetInt32();
-                    int zincFlag = doc.RootElement.GetProperty("zincFlag").GetInt32();
-                    int macaFlag = doc.RootElement.GetProperty("macaFlag").GetInt32();
-                    
-                    long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                    CheckFloorThreshold(db, now);
-                    LogEvent(db, now, mode, volume, heatFlag, zincFlag, macaFlag);
-                    SendState(w, db);
-                }
-                else if (action == "MANUAL_LOG")
-                {
-                    long ts = doc.RootElement.GetProperty("timestamp").GetInt64();
-                    string mode = doc.RootElement.GetProperty("mode").GetString() ?? "Maintenance";
-                    string volume = doc.RootElement.GetProperty("volume").GetString() ?? "Normal";
-                    int heatFlag = doc.RootElement.GetProperty("heatFlag").GetInt32();
-                    int zincFlag = doc.RootElement.GetProperty("zincFlag").GetInt32();
-                    int macaFlag = doc.RootElement.GetProperty("macaFlag").GetInt32();
-                    
-                    LogEvent(db, ts, mode, volume, heatFlag, zincFlag, macaFlag);
-                    SendState(w, db);
-                }
-                else if (action == "UPDATE_LOG")
-                {
-                    long id = doc.RootElement.GetProperty("id").GetInt64();
-                    long ts = doc.RootElement.GetProperty("timestamp").GetInt64();
-                    string mode = doc.RootElement.GetProperty("mode").GetString() ?? "Maintenance";
-                    string volume = doc.RootElement.GetProperty("volume").GetString() ?? "Normal";
-                    int heatFlag = doc.RootElement.GetProperty("heatFlag").GetInt32();
-                    int zincFlag = doc.RootElement.GetProperty("zincFlag").GetInt32();
-                    int macaFlag = doc.RootElement.GetProperty("macaFlag").GetInt32();
-                    
-                    using var cmd = db.CreateCommand();
-                    cmd.CommandText = "UPDATE Logs SET Timestamp = $ts, Mode = $mode, Volume = $vol, HeatFlag = $heat, ZincFlag = $zinc, MacaFlag = $maca WHERE Id = $id";
-                    cmd.Parameters.AddWithValue("$ts", ts);
-                    cmd.Parameters.AddWithValue("$mode", mode);
-                    cmd.Parameters.AddWithValue("$vol", volume);
-                    cmd.Parameters.AddWithValue("$heat", heatFlag);
-                    cmd.Parameters.AddWithValue("$zinc", zincFlag);
-                    cmd.Parameters.AddWithValue("$maca", macaFlag);
-                    cmd.Parameters.AddWithValue("$id", id);
-                    cmd.ExecuteNonQuery();
-                    SendState(w, db);
-                }
-                else if (action == "DELETE_LOG")
-                {
-                    long id = doc.RootElement.GetProperty("id").GetInt64();
-                    using var cmd = db.CreateCommand();
-                    cmd.CommandText = "DELETE FROM Logs WHERE Id = $id";
-                    cmd.Parameters.AddWithValue("$id", id);
-                    cmd.ExecuteNonQuery();
-                    SendState(w, db);
-                }
-                else if (action == "SET_APPOINTMENT")
-                {
-                    long ts = doc.RootElement.GetProperty("timestamp").GetInt64();
-                    using var cmd = db.CreateCommand();
-                    cmd.CommandText = "INSERT INTO Appointments (Timestamp) VALUES ($ts)";
-                    cmd.Parameters.AddWithValue("$ts", ts);
-                    cmd.ExecuteNonQuery();
-                    SendState(w, db);
-                }
-                else if (action == "CLEAR_APPOINTMENT")
-                {
-                    using var cmd = db.CreateCommand();
-                    cmd.CommandText = "DELETE FROM Appointments";
-                    cmd.ExecuteNonQuery();
-                    SendState(w, db);
-                }
-                else if (action == "SAVE_SETTINGS")
-                {
-                    double min = doc.RootElement.GetProperty("min").GetDouble();
-                    double max = doc.RootElement.GetProperty("max").GetDouble();
-                    using var cmd = db.CreateCommand();
-                    cmd.CommandText = "INSERT OR REPLACE INTO Settings (Key, Value) VALUES ('min_threshold', $min), ('max_threshold', $max)";
-                    cmd.Parameters.AddWithValue("$min", min.ToString());
-                    cmd.Parameters.AddWithValue("$max", max.ToString());
-                    cmd.ExecuteNonQuery();
-                    SendState(w, db);
-                }
-                else if (action == "TOGGLE_TEST_MODE")
-                {
-                    using var checkCmd = db.CreateCommand();
-                    checkCmd.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='Logs_Backup'";
-                    bool isTestMode = checkCmd.ExecuteScalar() != null;
-
-                    if (isTestMode)
+                    if (action == "RESIZE_WINDOW")
                     {
-                        using var restoreCmd = db.CreateCommand();
-                        restoreCmd.CommandText = @"
-                            DROP TABLE IF EXISTS Logs;
-                            DROP TABLE IF EXISTS Settings;
-                            DROP TABLE IF EXISTS Appointments;
-                            ALTER TABLE Logs_Backup RENAME TO Logs;
-                            ALTER TABLE Settings_Backup RENAME TO Settings;
-                            ALTER TABLE Appointments_Backup RENAME TO Appointments;
-                        ";
-                        restoreCmd.ExecuteNonQuery();
+                        int width = doc.RootElement.GetProperty("width").GetInt32();
+                        int height = doc.RootElement.GetProperty("height").GetInt32();
+                        w.SetSize(width, height);
+                        return; 
                     }
-                    else
-                    {
-                        using var backupCmd = db.CreateCommand();
-                        backupCmd.CommandText = @"
-                            ALTER TABLE Logs RENAME TO Logs_Backup;
-                            ALTER TABLE Settings RENAME TO Settings_Backup;
-                            ALTER TABLE Appointments RENAME TO Appointments_Backup;
-                            
-                            CREATE TABLE Logs (Id INTEGER PRIMARY KEY AUTOINCREMENT, Timestamp INTEGER, Mode TEXT DEFAULT 'Maintenance', Volume TEXT DEFAULT 'Normal', HeatFlag INTEGER DEFAULT 0, ZincFlag INTEGER DEFAULT 0, MacaFlag INTEGER DEFAULT 0);
-                            
-                            CREATE TABLE Settings (Key TEXT PRIMARY KEY, Value TEXT);
-                            INSERT INTO Settings SELECT * FROM Settings_Backup;
-                            
-                            CREATE TABLE Appointments (Id INTEGER PRIMARY KEY AUTOINCREMENT, Timestamp INTEGER);
-                        ";
-                        backupCmd.ExecuteNonQuery();
 
-                        long currentTs = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                        var rand = new Random();
-                        string[] modes = { "Maintenance", "Playtime", "Baby-Making" };
-                        string[] volumes = { "Low", "Normal", "High" };
+                    using var db = new SqliteConnection(dbConnectionString);
+                    db.Open();
+
+                    if (action == "GET_STATE")
+                    {
+                        SendState(w, db);
+                    }
+                    else if (action == "LOG_EVENT")
+                    {
+                        string mode = doc.RootElement.GetProperty("mode").GetString() ?? "Maintenance";
+                        string volume = doc.RootElement.GetProperty("volume").GetString() ?? "Normal";
+                        int heatFlag = doc.RootElement.GetProperty("heatFlag").GetInt32();
+                        int zincFlag = doc.RootElement.GetProperty("zincFlag").GetInt32();
+                        int macaFlag = doc.RootElement.GetProperty("macaFlag").GetInt32();
                         
-                        int testRecordCount = 150;
-                        int singleHeatEventIndex = rand.Next(0, testRecordCount);
-
-                        for (int i = 0; i < testRecordCount; i++)
-                        {
-                            int randomZinc = (i < 75) ? 1 : 0;
-                            int randomMaca = (i < 75) ? 1 : 0;
-                            
-                            int gapHours = rand.Next(35, 80);
-                            if (randomMaca == 1) gapHours -= rand.Next(10, 20); 
-                            
-                            currentTs -= (gapHours * 3600);
-                            string randomMode = modes[rand.Next(modes.Length)];
-                            
-                            string randomVol = "N/A";
-                            if (randomMode == "Maintenance")
-                            {
-                                if (randomZinc == 1) 
-                                {
-                                    randomVol = rand.Next(100) > 15 ? "High" : "Normal"; 
-                                }
-                                else 
-                                {
-                                    int spread = rand.Next(100);
-                                    randomVol = spread < 40 ? "Low" : (spread < 80 ? "Normal" : "High");
-                                }
-                            }
-                            
-                            int randomHeat = (i == singleHeatEventIndex) ? 1 : 0; 
-                            
-                            using var insertCmd = db.CreateCommand();
-                            insertCmd.CommandText = "INSERT INTO Logs (Timestamp, Mode, Volume, HeatFlag, ZincFlag, MacaFlag) VALUES ($ts, $mode, $vol, $heat, $zinc, $maca)";
-                            insertCmd.Parameters.AddWithValue("$ts", currentTs);
-                            insertCmd.Parameters.AddWithValue("$mode", randomMode);
-                            insertCmd.Parameters.AddWithValue("$vol", randomVol);
-                            insertCmd.Parameters.AddWithValue("$heat", randomHeat);
-                            insertCmd.Parameters.AddWithValue("$zinc", randomZinc);
-                            insertCmd.Parameters.AddWithValue("$maca", randomMaca);
-                            insertCmd.ExecuteNonQuery();
-                        }
+                        long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                        CheckFloorThreshold(db, now);
+                        LogEvent(db, now, mode, volume, heatFlag, zincFlag, macaFlag);
+                        SendState(w, db);
                     }
-                    SendState(w, db);
+                    else if (action == "MANUAL_LOG")
+                    {
+                        long ts = doc.RootElement.GetProperty("timestamp").GetInt64();
+                        string mode = doc.RootElement.GetProperty("mode").GetString() ?? "Maintenance";
+                        string volume = doc.RootElement.GetProperty("volume").GetString() ?? "Normal";
+                        int heatFlag = doc.RootElement.GetProperty("heatFlag").GetInt32();
+                        int zincFlag = doc.RootElement.GetProperty("zincFlag").GetInt32();
+                        int macaFlag = doc.RootElement.GetProperty("macaFlag").GetInt32();
+                        
+                        LogEvent(db, ts, mode, volume, heatFlag, zincFlag, macaFlag);
+                        SendState(w, db);
+                    }
+                    else if (action == "UPDATE_LOG")
+                    {
+                        long id = doc.RootElement.GetProperty("id").GetInt64();
+                        long ts = doc.RootElement.GetProperty("timestamp").GetInt64();
+                        string mode = doc.RootElement.GetProperty("mode").GetString() ?? "Maintenance";
+                        string volume = doc.RootElement.GetProperty("volume").GetString() ?? "Normal";
+                        int heatFlag = doc.RootElement.GetProperty("heatFlag").GetInt32();
+                        int zincFlag = doc.RootElement.GetProperty("zincFlag").GetInt32();
+                        int macaFlag = doc.RootElement.GetProperty("macaFlag").GetInt32();
+                        
+                        using var cmd = db.CreateCommand();
+                        cmd.CommandText = "UPDATE Logs SET Timestamp = $ts, Mode = $mode, Volume = $vol, HeatFlag = $heat, ZincFlag = $zinc, MacaFlag = $maca WHERE Id = $id";
+                        cmd.Parameters.AddWithValue("$ts", ts);
+                        cmd.Parameters.AddWithValue("$mode", mode);
+                        cmd.Parameters.AddWithValue("$vol", volume);
+                        cmd.Parameters.AddWithValue("$heat", heatFlag);
+                        cmd.Parameters.AddWithValue("$zinc", zincFlag);
+                        cmd.Parameters.AddWithValue("$maca", macaFlag);
+                        cmd.Parameters.AddWithValue("$id", id);
+                        cmd.ExecuteNonQuery();
+                        SendState(w, db);
+                    }
+                    else if (action == "DELETE_LOG")
+                    {
+                        long id = doc.RootElement.GetProperty("id").GetInt64();
+                        using var cmd = db.CreateCommand();
+                        cmd.CommandText = "DELETE FROM Logs WHERE Id = $id";
+                        cmd.Parameters.AddWithValue("$id", id);
+                        cmd.ExecuteNonQuery();
+                        SendState(w, db);
+                    }
+                    else if (action == "SET_APPOINTMENT")
+                    {
+                        long ts = doc.RootElement.GetProperty("timestamp").GetInt64();
+                        using var cmd = db.CreateCommand();
+                        cmd.CommandText = "INSERT INTO Appointments (Timestamp) VALUES ($ts)";
+                        cmd.Parameters.AddWithValue("$ts", ts);
+                        cmd.ExecuteNonQuery();
+                        SendState(w, db);
+                    }
+                    else if (action == "CLEAR_APPOINTMENT")
+                    {
+                        using var cmd = db.CreateCommand();
+                        cmd.CommandText = "DELETE FROM Appointments";
+                        cmd.ExecuteNonQuery();
+                        SendState(w, db);
+                    }
+                    else if (action == "SAVE_SETTINGS")
+                    {
+                        double min = doc.RootElement.GetProperty("min").GetDouble();
+                        double max = doc.RootElement.GetProperty("max").GetDouble();
+                        using var cmd = db.CreateCommand();
+                        cmd.CommandText = "INSERT OR REPLACE INTO Settings (Key, Value) VALUES ('min_threshold', $min), ('max_threshold', $max)";
+                        cmd.Parameters.AddWithValue("$min", min.ToString());
+                        cmd.Parameters.AddWithValue("$max", max.ToString());
+                        cmd.ExecuteNonQuery();
+                        SendState(w, db);
+                    }
+                    else if (action == "TOGGLE_TEST_MODE")
+                    {
+                        using var checkCmd = db.CreateCommand();
+                        checkCmd.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='Logs_Backup'";
+                        bool isTestMode = checkCmd.ExecuteScalar() != null;
+
+                        if (isTestMode)
+                        {
+                            using var restoreCmd = db.CreateCommand();
+                            restoreCmd.CommandText = @"
+                                DROP TABLE IF EXISTS Logs;
+                                DROP TABLE IF EXISTS Settings;
+                                DROP TABLE IF EXISTS Appointments;
+                                ALTER TABLE Logs_Backup RENAME TO Logs;
+                                ALTER TABLE Settings_Backup RENAME TO Settings;
+                                ALTER TABLE Appointments_Backup RENAME TO Appointments;
+                            ";
+                            restoreCmd.ExecuteNonQuery();
+                        }
+                        else
+                        {
+                            using var backupCmd = db.CreateCommand();
+                            backupCmd.CommandText = @"
+                                ALTER TABLE Logs RENAME TO Logs_Backup;
+                                ALTER TABLE Settings RENAME TO Settings_Backup;
+                                ALTER TABLE Appointments RENAME TO Appointments_Backup;
+                                
+                                CREATE TABLE Logs (Id INTEGER PRIMARY KEY AUTOINCREMENT, Timestamp INTEGER, Mode TEXT DEFAULT 'Maintenance', Volume TEXT DEFAULT 'Normal', HeatFlag INTEGER DEFAULT 0, ZincFlag INTEGER DEFAULT 0, MacaFlag INTEGER DEFAULT 0);
+                                
+                                CREATE TABLE Settings (Key TEXT PRIMARY KEY, Value TEXT);
+                                INSERT INTO Settings SELECT * FROM Settings_Backup;
+                                
+                                CREATE TABLE Appointments (Id INTEGER PRIMARY KEY AUTOINCREMENT, Timestamp INTEGER);
+                            ";
+                            backupCmd.ExecuteNonQuery();
+
+                            long currentTs = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                            var rand = new Random();
+                            string[] modes = { "Maintenance", "Playtime", "Baby-Making" };
+                            string[] volumes = { "Low", "Normal", "High" };
+                            
+                            int testRecordCount = 150;
+                            int singleHeatEventIndex = rand.Next(0, testRecordCount);
+
+                            for (int i = 0; i < testRecordCount; i++)
+                            {
+                                int randomZinc = (i < 75) ? 1 : 0;
+                                int randomMaca = (i < 75) ? 1 : 0;
+                                
+                                int gapHours = rand.Next(35, 80);
+                                if (randomMaca == 1) gapHours -= rand.Next(10, 20); 
+                                
+                                currentTs -= (gapHours * 3600);
+                                string randomMode = modes[rand.Next(modes.Length)];
+                                
+                                string randomVol = "N/A";
+                                if (randomMode == "Maintenance")
+                                {
+                                    if (randomZinc == 1) 
+                                    {
+                                        randomVol = rand.Next(100) > 15 ? "High" : "Normal"; 
+                                    }
+                                    else 
+                                    {
+                                        int spread = rand.Next(100);
+                                        randomVol = spread < 40 ? "Low" : (spread < 80 ? "Normal" : "High");
+                                    }
+                                }
+                                
+                                int randomHeat = (i == singleHeatEventIndex) ? 1 : 0; 
+                                
+                                using var insertCmd = db.CreateCommand();
+                                insertCmd.CommandText = "INSERT INTO Logs (Timestamp, Mode, Volume, HeatFlag, ZincFlag, MacaFlag) VALUES ($ts, $mode, $vol, $heat, $zinc, $maca)";
+                                insertCmd.Parameters.AddWithValue("$ts", currentTs);
+                                insertCmd.Parameters.AddWithValue("$mode", randomMode);
+                                insertCmd.Parameters.AddWithValue("$vol", randomVol);
+                                insertCmd.Parameters.AddWithValue("$heat", randomHeat);
+                                insertCmd.Parameters.AddWithValue("$zinc", randomZinc);
+                                insertCmd.Parameters.AddWithValue("$maca", randomMaca);
+                                insertCmd.ExecuteNonQuery();
+                            }
+                        }
+                        SendState(w, db);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Windows Fix 3: Intercept silent UI crashes and blast them to the desktop notifications so we can see the exact error.
+                    ShowNotification("PIMS Database Error", ex.Message);
                 }
             });
 
@@ -268,28 +273,34 @@ namespace WankPlanner
 
         static void InitializeDatabase()
         {
-            using var db = new SqliteConnection(dbConnectionString);
-            db.Open();
+            try
+            {
+                using var db = new SqliteConnection(dbConnectionString);
+                db.Open();
 
-            // Enable WAL mode to prevent background thread lockouts
-            using var walCmd = db.CreateCommand();
-            walCmd.CommandText = "PRAGMA journal_mode=WAL;";
-            walCmd.ExecuteNonQuery();
+                using var walCmd = db.CreateCommand();
+                walCmd.CommandText = "PRAGMA journal_mode=WAL;";
+                walCmd.ExecuteNonQuery();
 
-            using var cmd = db.CreateCommand();
-            cmd.CommandText = @"
-                CREATE TABLE IF NOT EXISTS Logs (Id INTEGER PRIMARY KEY AUTOINCREMENT, Timestamp INTEGER);
-                CREATE TABLE IF NOT EXISTS Appointments (Id INTEGER PRIMARY KEY AUTOINCREMENT, Timestamp INTEGER);
-                CREATE TABLE IF NOT EXISTS Settings (Key TEXT PRIMARY KEY, Value TEXT);
-                INSERT OR IGNORE INTO Settings (Key, Value) VALUES ('min_threshold', '24'), ('max_threshold', '72');
-            ";
-            cmd.ExecuteNonQuery();
+                using var cmd = db.CreateCommand();
+                cmd.CommandText = @"
+                    CREATE TABLE IF NOT EXISTS Logs (Id INTEGER PRIMARY KEY AUTOINCREMENT, Timestamp INTEGER);
+                    CREATE TABLE IF NOT EXISTS Appointments (Id INTEGER PRIMARY KEY AUTOINCREMENT, Timestamp INTEGER);
+                    CREATE TABLE IF NOT EXISTS Settings (Key TEXT PRIMARY KEY, Value TEXT);
+                    INSERT OR IGNORE INTO Settings (Key, Value) VALUES ('min_threshold', '24'), ('max_threshold', '72');
+                ";
+                cmd.ExecuteNonQuery();
 
-            try { using var m1 = db.CreateCommand(); m1.CommandText = "ALTER TABLE Logs ADD COLUMN Mode TEXT DEFAULT 'Maintenance'"; m1.ExecuteNonQuery(); } catch { }
-            try { using var m2 = db.CreateCommand(); m2.CommandText = "ALTER TABLE Logs ADD COLUMN Volume TEXT DEFAULT 'Normal'"; m2.ExecuteNonQuery(); } catch { }
-            try { using var m3 = db.CreateCommand(); m3.CommandText = "ALTER TABLE Logs ADD COLUMN HeatFlag INTEGER DEFAULT 0"; m3.ExecuteNonQuery(); } catch { }
-            try { using var m4 = db.CreateCommand(); m4.CommandText = "ALTER TABLE Logs ADD COLUMN ZincFlag INTEGER DEFAULT 0"; m4.ExecuteNonQuery(); } catch { }
-            try { using var m5 = db.CreateCommand(); m5.CommandText = "ALTER TABLE Logs ADD COLUMN MacaFlag INTEGER DEFAULT 0"; m5.ExecuteNonQuery(); } catch { }
+                try { using var m1 = db.CreateCommand(); m1.CommandText = "ALTER TABLE Logs ADD COLUMN Mode TEXT DEFAULT 'Maintenance'"; m1.ExecuteNonQuery(); } catch { }
+                try { using var m2 = db.CreateCommand(); m2.CommandText = "ALTER TABLE Logs ADD COLUMN Volume TEXT DEFAULT 'Normal'"; m2.ExecuteNonQuery(); } catch { }
+                try { using var m3 = db.CreateCommand(); m3.CommandText = "ALTER TABLE Logs ADD COLUMN HeatFlag INTEGER DEFAULT 0"; m3.ExecuteNonQuery(); } catch { }
+                try { using var m4 = db.CreateCommand(); m4.CommandText = "ALTER TABLE Logs ADD COLUMN ZincFlag INTEGER DEFAULT 0"; m4.ExecuteNonQuery(); } catch { }
+                try { using var m5 = db.CreateCommand(); m5.CommandText = "ALTER TABLE Logs ADD COLUMN MacaFlag INTEGER DEFAULT 0"; m5.ExecuteNonQuery(); } catch { }
+            }
+            catch (Exception ex)
+            {
+                ShowNotification("Init Error", ex.Message);
+            }
         }
 
         static void LogEvent(SqliteConnection db, long timestamp, string mode, string volume, int heatFlag, int zincFlag, int macaFlag)
@@ -324,32 +335,36 @@ namespace WankPlanner
 
         static void CheckCeilingThreshold(object? sender, ElapsedEventArgs e)
         {
-            using var db = new SqliteConnection(dbConnectionString);
-            db.Open();
-            using var cmdAppt = db.CreateCommand();
-            cmdAppt.CommandText = "SELECT Timestamp FROM Appointments ORDER BY Timestamp DESC LIMIT 1";
-            var apptResult = cmdAppt.ExecuteScalar();
-            long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-
-            if (apptResult != null)
+            try
             {
-                long apptTs = Convert.ToInt64(apptResult);
-                if (apptTs > now && (apptTs - now) <= (5 * 24 * 3600)) return; 
-            }
+                using var db = new SqliteConnection(dbConnectionString);
+                db.Open();
+                using var cmdAppt = db.CreateCommand();
+                cmdAppt.CommandText = "SELECT Timestamp FROM Appointments ORDER BY Timestamp DESC LIMIT 1";
+                var apptResult = cmdAppt.ExecuteScalar();
+                long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
-            using var cmdLog = db.CreateCommand();
-            cmdLog.CommandText = "SELECT Timestamp FROM Logs ORDER BY Timestamp DESC LIMIT 1";
-            var logResult = cmdLog.ExecuteScalar();
-            if (logResult != null)
-            {
-                long lastTimestamp = Convert.ToInt64(logResult);
-                double hoursSinceLast = (now - lastTimestamp) / 3600.0;
-                double maxThreshold = GetSetting(db, "max_threshold", 72.0);
-                if (hoursSinceLast > maxThreshold)
+                if (apptResult != null)
                 {
-                    ShowNotification("Maintenance Overdue", $"Routine turnover limit of {maxThreshold}h has been exceeded. ({hoursSinceLast:F1}h elapsed)");
+                    long apptTs = Convert.ToInt64(apptResult);
+                    if (apptTs > now && (apptTs - now) <= (5 * 24 * 3600)) return; 
+                }
+
+                using var cmdLog = db.CreateCommand();
+                cmdLog.CommandText = "SELECT Timestamp FROM Logs ORDER BY Timestamp DESC LIMIT 1";
+                var logResult = cmdLog.ExecuteScalar();
+                if (logResult != null)
+                {
+                    long lastTimestamp = Convert.ToInt64(logResult);
+                    double hoursSinceLast = (now - lastTimestamp) / 3600.0;
+                    double maxThreshold = GetSetting(db, "max_threshold", 72.0);
+                    if (hoursSinceLast > maxThreshold)
+                    {
+                        ShowNotification("Maintenance Overdue", $"Routine turnover limit of {maxThreshold}h has been exceeded. ({hoursSinceLast:F1}h elapsed)");
+                    }
                 }
             }
+            catch { }
         }
 
         static double GetSetting(SqliteConnection db, string key, double defaultValue)

@@ -1,38 +1,104 @@
-name: Build PIMS
+name: Build & Release PIMS
 
 on:
   push:
     branches: [ "main" ]
-  workflow_dispatch: # Allows you to manually click a "Run" button in GitHub
+    tags: [ "v*.*.*" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build:
+    name: Build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
-            rid: linux-x64
-            artifact_name: pims-linux-x64
-          - os: windows-latest
-            rid: win-x64
-            artifact_name: pims-windows-x64
-
-    runs-on: ${{ matrix.os }}
+          - target: win-x64
+            os: windows-latest
+            archive_name: pims-win-x64.zip
+            archive_cmd: Compress-Archive -Path ./publish/* -DestinationPath pims-win-x64.zip
+          - target: linux-x64
+            os: ubuntu-latest
+            archive_name: pims-linux-x64.tar.gz
+            archive_cmd: tar -czvf pims-linux-x64.tar.gz -C ./publish .
+          - target: osx-arm64
+            os: macos-latest
+            archive_name: pims-osx-arm64.tar.gz
+            archive_cmd: tar -czvf pims-osx-arm64.tar.gz -C ./publish .
 
     steps:
-    - name: Checkout Code
+    - name: Checkout Repository
       uses: actions/checkout@v4
+
+    - name: Install Linux Build Dependencies
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libsqlite3-dev
 
     - name: Setup .NET 8
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
+        cache: true
+        cache-dependency-path: '**/*.csproj'
+
+    - name: Restore Dependencies
+      run: dotnet restore
 
     - name: Publish Executable
-      run: dotnet publish -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true -o ./publish
+      run: >
+        dotnet publish -c Release 
+        -r ${{ matrix.target }} 
+        --self-contained true 
+        -p:PublishSingleFile=true 
+        -p:IncludeNativeLibrariesForSelfExtract=true 
+        -p:EnableCompressionInSingleFile=true 
+        -o ./publish
 
-    - name: Upload Build Artifacts
+    - name: Create Archive Package (Windows)
+      if: runner.os == 'Windows'
+      run: ${{ matrix.archive_cmd }}
+
+    - name: Create Archive Package (Unix)
+      if: runner.os != 'Windows'
+      run: ${{ matrix.archive_cmd }}
+
+    - name: Upload CI Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ matrix.artifact_name }}
-        path: ./publish/
+        name: ${{ matrix.target }}
+        path: ${{ matrix.archive_name }}
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Organize Archives for Release
+        run: |
+          mkdir ./release-files
+          find ./artifacts -type f \( -name "*.zip" -o -name "*.tar.gz" \) -exec cp {} ./release-files/ \;
+
+      - name: Create Draft Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          generate_release_notes: true
+          files: ./release-files/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

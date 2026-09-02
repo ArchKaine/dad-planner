@@ -21,7 +21,7 @@ namespace WankPlanner
 
             if (args.Length > 0 && args[0] == "--log")
             {
-                LogEvent(DateTimeOffset.UtcNow.ToUnixTimeSeconds(), "Maintenance", "Normal", 0);
+                LogEvent(DateTimeOffset.UtcNow.ToUnixTimeSeconds(), "Maintenance", "Normal", 0, 0, 0);
                 return;
             }
 
@@ -59,10 +59,12 @@ namespace WankPlanner
                     string mode = doc.RootElement.GetProperty("mode").GetString() ?? "Maintenance";
                     string volume = doc.RootElement.GetProperty("volume").GetString() ?? "Normal";
                     int heatFlag = doc.RootElement.GetProperty("heatFlag").GetInt32();
+                    int zincFlag = doc.RootElement.GetProperty("zincFlag").GetInt32();
+                    int macaFlag = doc.RootElement.GetProperty("macaFlag").GetInt32();
                     
                     long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                     CheckFloorThreshold(db, now);
-                    LogEvent(now, mode, volume, heatFlag);
+                    LogEvent(now, mode, volume, heatFlag, zincFlag, macaFlag);
                     SendState(w, db);
                 }
                 else if (action == "MANUAL_LOG")
@@ -71,8 +73,10 @@ namespace WankPlanner
                     string mode = doc.RootElement.GetProperty("mode").GetString() ?? "Maintenance";
                     string volume = doc.RootElement.GetProperty("volume").GetString() ?? "Normal";
                     int heatFlag = doc.RootElement.GetProperty("heatFlag").GetInt32();
+                    int zincFlag = doc.RootElement.GetProperty("zincFlag").GetInt32();
+                    int macaFlag = doc.RootElement.GetProperty("macaFlag").GetInt32();
                     
-                    LogEvent(ts, mode, volume, heatFlag);
+                    LogEvent(ts, mode, volume, heatFlag, zincFlag, macaFlag);
                     SendState(w, db);
                 }
                 else if (action == "UPDATE_LOG")
@@ -82,13 +86,17 @@ namespace WankPlanner
                     string mode = doc.RootElement.GetProperty("mode").GetString() ?? "Maintenance";
                     string volume = doc.RootElement.GetProperty("volume").GetString() ?? "Normal";
                     int heatFlag = doc.RootElement.GetProperty("heatFlag").GetInt32();
+                    int zincFlag = doc.RootElement.GetProperty("zincFlag").GetInt32();
+                    int macaFlag = doc.RootElement.GetProperty("macaFlag").GetInt32();
                     
                     using var cmd = db.CreateCommand();
-                    cmd.CommandText = "UPDATE Logs SET Timestamp = $ts, Mode = $mode, Volume = $vol, HeatFlag = $heat WHERE Id = $id";
+                    cmd.CommandText = "UPDATE Logs SET Timestamp = $ts, Mode = $mode, Volume = $vol, HeatFlag = $heat, ZincFlag = $zinc, MacaFlag = $maca WHERE Id = $id";
                     cmd.Parameters.AddWithValue("$ts", ts);
                     cmd.Parameters.AddWithValue("$mode", mode);
                     cmd.Parameters.AddWithValue("$vol", volume);
                     cmd.Parameters.AddWithValue("$heat", heatFlag);
+                    cmd.Parameters.AddWithValue("$zinc", zincFlag);
+                    cmd.Parameters.AddWithValue("$maca", macaFlag);
                     cmd.Parameters.AddWithValue("$id", id);
                     cmd.ExecuteNonQuery();
                     SendState(w, db);
@@ -137,7 +145,6 @@ namespace WankPlanner
 
                     if (isTestMode)
                     {
-                        // Restore real data
                         using var restoreCmd = db.CreateCommand();
                         restoreCmd.CommandText = @"
                             DROP TABLE IF EXISTS Logs;
@@ -151,14 +158,13 @@ namespace WankPlanner
                     }
                     else
                     {
-                        // Backup real data and create test environment
                         using var backupCmd = db.CreateCommand();
                         backupCmd.CommandText = @"
                             ALTER TABLE Logs RENAME TO Logs_Backup;
                             ALTER TABLE Settings RENAME TO Settings_Backup;
                             ALTER TABLE Appointments RENAME TO Appointments_Backup;
                             
-                            CREATE TABLE Logs (Id INTEGER PRIMARY KEY AUTOINCREMENT, Timestamp INTEGER, Mode TEXT DEFAULT 'Maintenance', Volume TEXT DEFAULT 'Normal', HeatFlag INTEGER DEFAULT 0);
+                            CREATE TABLE Logs (Id INTEGER PRIMARY KEY AUTOINCREMENT, Timestamp INTEGER, Mode TEXT DEFAULT 'Maintenance', Volume TEXT DEFAULT 'Normal', HeatFlag INTEGER DEFAULT 0, ZincFlag INTEGER DEFAULT 0, MacaFlag INTEGER DEFAULT 0);
                             
                             CREATE TABLE Settings (Key TEXT PRIMARY KEY, Value TEXT);
                             INSERT INTO Settings SELECT * FROM Settings_Backup;
@@ -167,26 +173,55 @@ namespace WankPlanner
                         ";
                         backupCmd.ExecuteNonQuery();
 
-                        // Seed fake logs
                         long currentTs = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                         var rand = new Random();
                         string[] modes = { "Maintenance", "Playtime", "Baby-Making" };
                         string[] volumes = { "Low", "Normal", "High" };
+                        
+                        int testRecordCount = 150;
+                        int singleHeatEventIndex = rand.Next(0, testRecordCount);
 
-                        for (int i = 0; i < 20; i++)
+                        // Logs are generated backwards in time from currentTs
+                        for (int i = 0; i < testRecordCount; i++)
                         {
-                            int gapHours = rand.Next(20, 85);
+                            // Create clean blocks: Newest 75 records have supplements, oldest 75 records do not.
+                            int randomZinc = (i < 75) ? 1 : 0;
+                            int randomMaca = (i < 75) ? 1 : 0;
+                            
+                            // Biological Simulation: Maca artificially reduces the recovery gap
+                            int gapHours = rand.Next(35, 80);
+                            if (randomMaca == 1) gapHours -= rand.Next(10, 20); 
+                            
                             currentTs -= (gapHours * 3600);
                             string randomMode = modes[rand.Next(modes.Length)];
-                            string randomVol = randomMode == "Maintenance" ? volumes[rand.Next(volumes.Length)] : "N/A";
-                            int randomHeat = rand.Next(100) > 85 ? 1 : 0; 
+                            
+                            // Biological Simulation: Zinc artificially boosts the volume yield
+                            string randomVol = "N/A";
+                            if (randomMode == "Maintenance")
+                            {
+                                if (randomZinc == 1) 
+                                {
+                                    // Saturated baseline: mostly normal/high
+                                    randomVol = rand.Next(100) > 15 ? "High" : "Normal"; 
+                                }
+                                else 
+                                {
+                                    // Un-supplemented baseline: wider, more random spread
+                                    int spread = rand.Next(100);
+                                    randomVol = spread < 40 ? "Low" : (spread < 80 ? "Normal" : "High");
+                                }
+                            }
+                            
+                            int randomHeat = (i == singleHeatEventIndex) ? 1 : 0; 
                             
                             using var insertCmd = db.CreateCommand();
-                            insertCmd.CommandText = "INSERT INTO Logs (Timestamp, Mode, Volume, HeatFlag) VALUES ($ts, $mode, $vol, $heat)";
+                            insertCmd.CommandText = "INSERT INTO Logs (Timestamp, Mode, Volume, HeatFlag, ZincFlag, MacaFlag) VALUES ($ts, $mode, $vol, $heat, $zinc, $maca)";
                             insertCmd.Parameters.AddWithValue("$ts", currentTs);
                             insertCmd.Parameters.AddWithValue("$mode", randomMode);
                             insertCmd.Parameters.AddWithValue("$vol", randomVol);
                             insertCmd.Parameters.AddWithValue("$heat", randomHeat);
+                            insertCmd.Parameters.AddWithValue("$zinc", randomZinc);
+                            insertCmd.Parameters.AddWithValue("$maca", randomMaca);
                             insertCmd.ExecuteNonQuery();
                         }
                     }
@@ -217,18 +252,22 @@ namespace WankPlanner
             try { using var m1 = db.CreateCommand(); m1.CommandText = "ALTER TABLE Logs ADD COLUMN Mode TEXT DEFAULT 'Maintenance'"; m1.ExecuteNonQuery(); } catch { }
             try { using var m2 = db.CreateCommand(); m2.CommandText = "ALTER TABLE Logs ADD COLUMN Volume TEXT DEFAULT 'Normal'"; m2.ExecuteNonQuery(); } catch { }
             try { using var m3 = db.CreateCommand(); m3.CommandText = "ALTER TABLE Logs ADD COLUMN HeatFlag INTEGER DEFAULT 0"; m3.ExecuteNonQuery(); } catch { }
+            try { using var m4 = db.CreateCommand(); m4.CommandText = "ALTER TABLE Logs ADD COLUMN ZincFlag INTEGER DEFAULT 0"; m4.ExecuteNonQuery(); } catch { }
+            try { using var m5 = db.CreateCommand(); m5.CommandText = "ALTER TABLE Logs ADD COLUMN MacaFlag INTEGER DEFAULT 0"; m5.ExecuteNonQuery(); } catch { }
         }
 
-        static void LogEvent(long timestamp, string mode, string volume, int heatFlag)
+        static void LogEvent(long timestamp, string mode, string volume, int heatFlag, int zincFlag, int macaFlag)
         {
             using var db = new SqliteConnection($"Data Source={dbPath}");
             db.Open();
             using var cmd = db.CreateCommand();
-            cmd.CommandText = "INSERT INTO Logs (Timestamp, Mode, Volume, HeatFlag) VALUES ($ts, $mode, $vol, $heat)";
+            cmd.CommandText = "INSERT INTO Logs (Timestamp, Mode, Volume, HeatFlag, ZincFlag, MacaFlag) VALUES ($ts, $mode, $vol, $heat, $zinc, $maca)";
             cmd.Parameters.AddWithValue("$ts", timestamp);
             cmd.Parameters.AddWithValue("$mode", mode);
             cmd.Parameters.AddWithValue("$vol", volume);
             cmd.Parameters.AddWithValue("$heat", heatFlag);
+            cmd.Parameters.AddWithValue("$zinc", zincFlag);
+            cmd.Parameters.AddWithValue("$maca", macaFlag);
             cmd.ExecuteNonQuery();
         }
 
@@ -237,13 +276,11 @@ namespace WankPlanner
             using var cmdLog = db.CreateCommand();
             cmdLog.CommandText = "SELECT Timestamp FROM Logs ORDER BY Timestamp DESC LIMIT 1";
             var result = cmdLog.ExecuteScalar();
-            
             if (result != null)
             {
                 long lastTimestamp = Convert.ToInt64(result);
                 double hoursSinceLast = (newTimestamp - lastTimestamp) / 3600.0;
                 double minThreshold = GetSetting(db, "min_threshold", 24.0);
-
                 if (hoursSinceLast < minThreshold)
                 {
                     ShowNotification("Warning: Minimum Rest Period Breached", $"Only {hoursSinceLast:F1}h elapsed (Target: {minThreshold}h). Potential volume depletion.");
@@ -255,7 +292,6 @@ namespace WankPlanner
         {
             using var db = new SqliteConnection($"Data Source={dbPath}");
             db.Open();
-
             using var cmdAppt = db.CreateCommand();
             cmdAppt.CommandText = "SELECT Timestamp FROM Appointments ORDER BY Timestamp DESC LIMIT 1";
             var apptResult = cmdAppt.ExecuteScalar();
@@ -264,22 +300,17 @@ namespace WankPlanner
             if (apptResult != null)
             {
                 long apptTs = Convert.ToInt64(apptResult);
-                if (apptTs > now && (apptTs - now) <= (5 * 24 * 3600))
-                {
-                    return; 
-                }
+                if (apptTs > now && (apptTs - now) <= (5 * 24 * 3600)) return; 
             }
 
             using var cmdLog = db.CreateCommand();
             cmdLog.CommandText = "SELECT Timestamp FROM Logs ORDER BY Timestamp DESC LIMIT 1";
             var logResult = cmdLog.ExecuteScalar();
-
             if (logResult != null)
             {
                 long lastTimestamp = Convert.ToInt64(logResult);
                 double hoursSinceLast = (now - lastTimestamp) / 3600.0;
                 double maxThreshold = GetSetting(db, "max_threshold", 72.0);
-
                 if (hoursSinceLast > maxThreshold)
                 {
                     ShowNotification("Maintenance Overdue", $"Routine turnover limit of {maxThreshold}h has been exceeded. ({hoursSinceLast:F1}h elapsed)");
@@ -300,7 +331,7 @@ namespace WankPlanner
         static void SendState(PhotinoWindow window, SqliteConnection db)
         {
             using var cmdLogs = db.CreateCommand();
-            cmdLogs.CommandText = "SELECT Id, Timestamp, IFNULL(Mode, 'Maintenance'), IFNULL(Volume, 'Normal'), IFNULL(HeatFlag, 0) FROM Logs ORDER BY Timestamp DESC";
+            cmdLogs.CommandText = "SELECT Id, Timestamp, IFNULL(Mode, 'Maintenance'), IFNULL(Volume, 'Normal'), IFNULL(HeatFlag, 0), IFNULL(ZincFlag, 0), IFNULL(MacaFlag, 0) FROM Logs ORDER BY Timestamp DESC";
             using var reader = cmdLogs.ExecuteReader();
             
             var logs = new List<object>();
@@ -311,7 +342,9 @@ namespace WankPlanner
                     timestamp = reader.GetInt64(1),
                     mode = reader.GetString(2),
                     volume = reader.GetString(3),
-                    heatFlag = reader.GetInt32(4)
+                    heatFlag = reader.GetInt32(4),
+                    zincFlag = reader.GetInt32(5),
+                    macaFlag = reader.GetInt32(6)
                 });
             }
 
@@ -319,7 +352,6 @@ namespace WankPlanner
             cmdAppt.CommandText = "SELECT Timestamp FROM Appointments ORDER BY Timestamp DESC LIMIT 1";
             var apptResult = cmdAppt.ExecuteScalar();
             long appt = apptResult != null ? Convert.ToInt64(apptResult) : 0;
-
             double min = GetSetting(db, "min_threshold", 24.0);
             double max = GetSetting(db, "max_threshold", 72.0);
 

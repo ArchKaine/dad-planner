@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Timers;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Photino.NET;
 using Microsoft.Data.Sqlite;
 
@@ -81,7 +82,7 @@ namespace WankPlanner
                     return; 
                 }
 
-                // Windows Fix: Open exactly ONE connection per UI action
+                // Open exactly ONE connection per UI action
                 using var db = new SqliteConnection(dbConnectionString);
                 db.Open();
 
@@ -99,7 +100,6 @@ namespace WankPlanner
                     
                     long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                     CheckFloorThreshold(db, now);
-                    // Pass the open connection instead of creating a new one
                     LogEvent(db, now, mode, volume, heatFlag, zincFlag, macaFlag);
                     SendState(w, db);
                 }
@@ -112,7 +112,6 @@ namespace WankPlanner
                     int zincFlag = doc.RootElement.GetProperty("zincFlag").GetInt32();
                     int macaFlag = doc.RootElement.GetProperty("macaFlag").GetInt32();
                     
-                    // Pass the open connection
                     LogEvent(db, ts, mode, volume, heatFlag, zincFlag, macaFlag);
                     SendState(w, db);
                 }
@@ -272,7 +271,7 @@ namespace WankPlanner
             using var db = new SqliteConnection(dbConnectionString);
             db.Open();
 
-            // Windows Concurrency Fix: Enable WAL mode to prevent background thread lockouts
+            // Enable WAL mode to prevent background thread lockouts
             using var walCmd = db.CreateCommand();
             walCmd.CommandText = "PRAGMA journal_mode=WAL;";
             walCmd.ExecuteNonQuery();
@@ -293,7 +292,6 @@ namespace WankPlanner
             try { using var m5 = db.CreateCommand(); m5.CommandText = "ALTER TABLE Logs ADD COLUMN MacaFlag INTEGER DEFAULT 0"; m5.ExecuteNonQuery(); } catch { }
         }
 
-        // Updated Signature: Requires the active DB connection to be passed in
         static void LogEvent(SqliteConnection db, long timestamp, string mode, string volume, int heatFlag, int zincFlag, int macaFlag)
         {
             using var cmd = db.CreateCommand();
@@ -411,16 +409,40 @@ namespace WankPlanner
         {
             try
             {
-                Process.Start(new ProcessStartInfo
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    FileName = "notify-send",
-                    Arguments = $"\"{title}\" \"{message}\"",
-                    RedirectStandardOutput = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                });
+                    string psCommand = $"Add-Type -AssemblyName System.Windows.Forms; $n = New-Object System.Windows.Forms.NotifyIcon; $n.Icon = [System.Drawing.SystemIcons]::Information; $n.Visible = $true; $n.ShowBalloonTip(5000, '{title}', '{message}', 'Info'); Start-Sleep -Seconds 5; $n.Dispose()";
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "powershell",
+                        Arguments = $"-WindowStyle Hidden -Command \"{psCommand}\"",
+                        CreateNoWindow = true,
+                        UseShellExecute = false
+                    });
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "osascript",
+                        Arguments = $"-e 'display notification \"{message}\" with title \"{title}\"'",
+                        CreateNoWindow = true,
+                        UseShellExecute = false
+                    });
+                }
+                else
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "notify-send",
+                        Arguments = $"\"{title}\" \"{message}\"",
+                        RedirectStandardOutput = true,
+                        CreateNoWindow = true,
+                        UseShellExecute = false
+                    });
+                }
             }
-            catch { }
+            catch { /* Failsafe */ }
         }
     }
 }

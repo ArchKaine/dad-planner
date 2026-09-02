@@ -11,12 +11,29 @@ namespace WankPlanner
 {
     class Program
     {
-        static string dbPath = "inventory.db";
+        static string dbDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PIMS");
+        static string dbPath = Path.Combine(dbDir, "inventory.db");
         static System.Timers.Timer? bgTimer;
 
         [STAThread]
         static void Main(string[] args)
         {
+            Directory.CreateDirectory(dbDir);
+
+            // Legacy DB Migration: Move local database to AppData if it exists and the new location is empty
+            string legacyDb = "inventory.db";
+            string altLegacyDb = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "inventory.db");
+            
+            if (!File.Exists(dbPath))
+            {
+                try 
+                {
+                    if (File.Exists(legacyDb)) File.Move(legacyDb, dbPath);
+                    else if (File.Exists(altLegacyDb)) File.Move(altLegacyDb, dbPath);
+                }
+                catch { /* Failsafe to prevent crash if file is locked by the OS */ }
+            }
+
             InitializeDatabase();
 
             if (args.Length > 0 && args[0] == "--log")
@@ -181,32 +198,26 @@ namespace WankPlanner
                         int testRecordCount = 150;
                         int singleHeatEventIndex = rand.Next(0, testRecordCount);
 
-                        // Logs are generated backwards in time from currentTs
                         for (int i = 0; i < testRecordCount; i++)
                         {
-                            // Create clean blocks: Newest 75 records have supplements, oldest 75 records do not.
                             int randomZinc = (i < 75) ? 1 : 0;
                             int randomMaca = (i < 75) ? 1 : 0;
                             
-                            // Biological Simulation: Maca artificially reduces the recovery gap
                             int gapHours = rand.Next(35, 80);
                             if (randomMaca == 1) gapHours -= rand.Next(10, 20); 
                             
                             currentTs -= (gapHours * 3600);
                             string randomMode = modes[rand.Next(modes.Length)];
                             
-                            // Biological Simulation: Zinc artificially boosts the volume yield
                             string randomVol = "N/A";
                             if (randomMode == "Maintenance")
                             {
                                 if (randomZinc == 1) 
                                 {
-                                    // Saturated baseline: mostly normal/high
                                     randomVol = rand.Next(100) > 15 ? "High" : "Normal"; 
                                 }
                                 else 
                                 {
-                                    // Un-supplemented baseline: wider, more random spread
                                     int spread = rand.Next(100);
                                     randomVol = spread < 40 ? "Low" : (spread < 80 ? "Normal" : "High");
                                 }

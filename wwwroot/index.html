@@ -3,238 +3,499 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Maintenance Utility</title>
-    <script src="js/chart.min.js"></script>
+    <title>PIMS Dashboard</title>
     <style>
-        body { background: #121212; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; transition: 0.3s; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 850px; margin: 0 auto; }
-        .panel { background: #1e1e1e; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        h2 { margin-top: 0; color: #a0a0a0; font-size: 1.1rem; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        h1, h2, h3 { color: #ffffff; margin-top: 0; }
+        .container { max-width: 850px; margin: 0 auto; }
         
-        .btn { background: #007acc; color: white; border: none; padding: 12px; font-size: 1rem; border-radius: 4px; cursor: pointer; width: 100%; transition: 0.2s; margin-bottom: 10px; }
-        .btn:hover { background: #005999; }
-        .btn-alert { background: #cc3300; }
-        .btn-alert:hover { background: #992600; }
-        .btn-small { background: #444; padding: 8px; border: none; color: white; border-radius: 4px; cursor: pointer; }
+        .hud-container { display: flex; gap: 15px; margin-bottom: 20px; }
+        .hud-box {
+            flex: 1; background-color: #1e1e1e; border: 1px solid #333;
+            border-radius: 6px; padding: 15px; text-align: center;
+        }
+        .hud-value { font-size: 1.8rem; font-weight: bold; color: #007acc; margin-bottom: 5px; }
+        .hud-label { font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
         
-        .flex-row { display: flex; gap: 10px; margin-bottom: 10px; }
-        input { flex: 1; padding: 8px; background: #2a2a2a; border: 1px solid #444; color: white; border-radius: 4px; color-scheme: dark; }
+        .banner { background-color: #ff9800; color: #000; padding: 10px 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; display: none; }
+        .banner-danger { background-color: #d32f2f; color: #fff; }
         
-        .log-container { max-height: 250px; overflow-y: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #333; }
-        th { background: #2a2a2a; position: sticky; top: 0; }
-        .delete-btn { color: #ff5252; cursor: pointer; text-align: center; font-weight: bold; }
+        button { background-color: #007acc; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #005999; }
         
-        #blackoutBanner { display: none; background: #ff9800; color: #000; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-weight: bold; text-align: center; }
+        .modifier-bar {
+            background-color: #1a1a1a; border: 1px solid #333; border-radius: 6px; 
+            padding: 10px 15px; margin-bottom: 10px; display: flex; gap: 20px; align-items: center;
+        }
         
-        /* Telemetry HUD */
-        .hud-container { display: flex; gap: 10px; margin-bottom: 15px; }
-        .hud-box { flex: 1; background: #252526; padding: 10px; border-radius: 4px; text-align: center; border: 1px solid #333; }
-        .hud-value { font-size: 1.4rem; font-weight: bold; color: #007acc; margin-bottom: 4px; }
-        .hud-label { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
-
-        /* Stealth Mode */
-        body.stealth .sensitive-data { filter: blur(5px); opacity: 0.5; }
-        body.stealth .stealth-title::before { content: "Network Packet Diagnostics"; visibility: visible; display: block; }
-        body.stealth .stealth-title span { display: none; }
+        .action-row { display: flex; gap: 15px; margin-bottom: 20px; }
+        .btn-action { flex: 1; padding: 15px; font-size: 1.1rem; }
+        .btn-maint { background-color: #007acc; } .btn-maint:hover { background-color: #005999; }
+        .btn-play { background-color: #9c27b0; } .btn-play:hover { background-color: #7b1fa2; }
+        .btn-baby { background-color: #2e7d32; } .btn-baby:hover { background-color: #1b5e20; }
+        
+        .btn-edit { background-color: #f57c00; padding: 5px 10px; font-size: 0.8rem; }
+        .btn-edit:hover { background-color: #e65100; }
+        .btn-danger { background-color: #d32f2f; padding: 5px 10px; font-size: 0.8rem; }
+        .btn-danger:hover { background-color: #9a0007; }
+        
+        input[type="datetime-local"], input[type="number"], select, input[type="checkbox"] {
+            background-color: #1e1e1e; color: #e0e0e0; border: 1px solid #333;
+            padding: 8px; border-radius: 4px; color-scheme: dark;
+        }
+        
+        .table-container {
+            max-height: 250px; overflow-y: auto; margin-top: 20px;
+            border: 1px solid #333; border-radius: 6px; background-color: #1e1e1e;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #333; vertical-align: middle; }
+        th { background-color: #252526; position: sticky; top: 0; box-shadow: 0 1px 0 #333; z-index: 1; }
+        
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; color: #fff; }
+        .bg-maint { background-color: #007acc; }
+        .bg-play { background-color: #9c27b0; }
+        .bg-baby { background-color: #2e7d32; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .control-panel { background-color: #1e1e1e; padding: 15px; border: 1px solid #333; border-radius: 6px; }
+        .stealth-active .sensitive-data { filter: blur(10px); opacity: 0.3; pointer-events: none; }
+        ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: #1e1e1e; }
+        ::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; } ::-webkit-scrollbar-thumb:hover { background: #777; }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div id="blackoutBanner">CLINICAL BLACKOUT ACTIVE: No maintenance permitted.</div>
-    
-    <div class="grid">
-        <!-- Control Panel -->
-        <div class="panel">
-            <h2 class="stealth-title"><span>Operational Controls</span></h2>
-            <button class="btn sensitive-data" onclick="sendAction('LOG_EVENT')">Execute Maintenance Protocol</button>
-            
-            <h2 style="margin-top:20px;">Manual / Retroactive Entry</h2>
-            <div class="flex-row">
-                <input type="datetime-local" id="manualDate">
-                <button class="btn-small" onclick="addManualLog()">Inject</button>
-            </div>
-
-            <h2 style="margin-top:20px;">Clinical Target (OHSU)</h2>
-            <div class="flex-row">
-                <input type="datetime-local" id="ohsuDate">
-                <button class="btn-small" onclick="setAppointment()">Set Target</button>
-                <button class="btn-small btn-alert" onclick="clearAppointment()">Clear</button>
-            </div>
-            
-            <button class="btn-small" style="width:100%; margin-top:15px;" onclick="sendAction('EXPORT_CSV')">Export Data to CSV</button>
+    <div class="container" id="appContainer">
+        <h1>System Maintenance Utility</h1>
+        
+        <div id="blackoutBanner" class="banner sensitive-data">
+            CLINICAL BLACKOUT ACTIVE: Target T-Minus <span id="blackoutCountdown"></span>
         </div>
 
-        <!-- Analytics & Logs -->
-        <div class="panel">
-            <h2 class="stealth-title"><span>Frequency Analytics</span></h2>
+        <div id="testBanner" class="banner banner-danger">
+            WARNING: TEST MODE ACTIVE. FAKE DATA DISPLAYED.
+        </div>
+
+        <div class="hud-container sensitive-data">
+            <div class="hud-box">
+                <div class="hud-value" id="hudCurrent">--</div>
+                <div class="hud-label">Current Delta</div>
+            </div>
+            <div class="hud-box">
+                <div class="hud-value" id="hudRemaining">--</div>
+                <div class="hud-label">Limit T-Minus</div>
+            </div>
+            <div class="hud-box">
+                <div class="hud-value" id="hudAvg">--</div>
+                <div class="hud-label">Rolling Avg</div>
+            </div>
+            <div class="hud-box">
+                <div class="hud-value" id="hudMax">--</div>
+                <div class="hud-label">Max Endurance</div>
+            </div>
+        </div>
+
+        <div class="sensitive-data" style="position: relative; height: 160px; width: 100%; margin-bottom: 20px;">
+            <canvas id="chartCanvas"></canvas>
+        </div>
+
+        <div class="modifier-bar sensitive-data">
+            <span style="color: #888; font-size: 0.9rem; font-weight: bold;">PRE-LOG MODIFIERS:</span>
+            <label style="cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                <input type="checkbox" id="modHeat"> 🌡️ Fever / Hot Tub
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px;">
+                💧 Solo Volume:
+                <select id="modVolume">
+                    <option value="Low">Low</option>
+                    <option value="Normal" selected>Normal</option>
+                    <option value="High">High</option>
+                </select>
+            </label>
+        </div>
+
+        <div class="action-row">
+            <button class="btn-action btn-maint" onclick="logEvent('Maintenance')">Maintenance</button>
+            <button class="btn-action btn-play" onclick="logEvent('Playtime')">Playtime</button>
+            <button class="btn-action btn-baby" onclick="logEvent('Baby-Making')">Baby-Making</button>
+        </div>
+
+        <div class="grid-2">
+            <div class="control-panel">
+                <h3>Threshold Configuration</h3>
+                <div style="display: flex; gap: 10px; align-items: flex-end;">
+                    <div style="flex: 1;">
+                        <label style="font-size:0.8rem; color:#888; display:block; margin-bottom:5px;">Min Rest (Hrs)</label>
+                        <input type="number" id="minHours" style="width:100%; box-sizing:border-box;">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size:0.8rem; color:#888; display:block; margin-bottom:5px;">Max Limit (Hrs)</label>
+                        <input type="number" id="maxHours" style="width:100%; box-sizing:border-box;">
+                    </div>
+                    <div>
+                        <button onclick="saveSettings()">Save</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <h3>Retroactive Log</h3>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="datetime-local" id="manualDate" style="flex: 1;">
+                    <select id="manualMode" style="flex: 1;">
+                        <option value="Maintenance">Maintenance</option>
+                        <option value="Playtime">Playtime</option>
+                        <option value="Baby-Making">Baby-Making</option>
+                    </select>
+                    <button onclick="manualLog()">Insert</button>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <h3>Clinical Target (Blackout)</h3>
+                <div style="display: flex; gap: 10px;">
+                    <input type="datetime-local" id="apptDate">
+                    <button onclick="setAppointment()">Lock</button>
+                    <button onclick="clearAppointment()" style="background-color: #555;">Clear</button>
+                </div>
+            </div>
             
-            <!-- Telemetry HUD -->
-            <div class="hud-container sensitive-data">
-                <div class="hud-box">
-                    <div class="hud-value" id="hudCurrent">--</div>
-                    <div class="hud-label">Current Delta</div>
-                </div>
-                <div class="hud-box">
-                    <div class="hud-value" id="hudRemaining">--</div>
-                    <div class="hud-label">Limit T-Minus</div>
-                </div>
-                <div class="hud-box">
-                    <div class="hud-value" id="hudAvg">--</div>
-                    <div class="hud-label">Rolling Avg</div>
-                </div>
-                <div class="hud-box">
-                    <div class="hud-value" id="hudMax">--</div>
-                    <div class="hud-label">Max Endurance</div>
-                </div>
+            <div class="control-panel" style="border-color: #444;">
+                <h3 style="color: #aaa;">Debug & Testing</h3>
+                <button id="testModeBtn" onclick="toggleTestMode()" style="background-color: #555; width: 100%;">Enter Test Mode (Fake Data)</button>
             </div>
+        </div>
 
-            <div class="sensitive-data" style="position: relative; height: 160px; width: 100%; margin-bottom: 20px;">
-                <canvas id="chartCanvas"></canvas>
-            </div>
-
-            <h2 class="stealth-title"><span>Protocol History</span></h2>
-            <div class="log-container sensitive-data">
-                <table>
-                    <thead><tr><th>Timestamp</th><th style="width:40px;">Rev</th></tr></thead>
-                    <tbody id="logTableBody"></tbody>
-                </table>
-            </div>
+        <div class="table-container sensitive-data">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Timestamp (Local)</th>
+                        <th>Mode</th>
+                        <th>Metrics</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="logList">
+                </tbody>
+            </table>
         </div>
     </div>
 
     <script>
-        let frequencyChart = null;
+        let myChart = null;
+        let globalLogs = []; // Cache logs so we can fetch data during inline edit
 
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') document.body.classList.toggle('stealth');
+        function sendAction(action, data = {}) {
+            data.action = action;
+            window.external.sendMessage(JSON.stringify(data));
+        }
+
+        window.external.receiveMessage(message => {
+            const data = JSON.parse(message);
+            
+            if (data.action === 'UPDATE_STATE') {
+                const now = Math.floor(Date.now() / 1000);
+                
+                const minH = data.settings ? data.settings.min : 24;
+                const maxH = data.settings ? data.settings.max : 72;
+                document.getElementById('minHours').value = minH;
+                document.getElementById('maxHours').value = maxH;
+
+                if (data.isTestMode) {
+                    document.getElementById('testBanner').style.display = 'block';
+                    const btn = document.getElementById('testModeBtn');
+                    btn.innerText = 'Exit Test Mode (Restore Real Data)';
+                    btn.style.backgroundColor = '#d32f2f';
+                } else {
+                    document.getElementById('testBanner').style.display = 'none';
+                    const btn = document.getElementById('testModeBtn');
+                    btn.innerText = 'Enter Test Mode (Fake Data)';
+                    btn.style.backgroundColor = '#555';
+                }
+
+                globalLogs = data.logs;
+                const list = document.getElementById('logList');
+                list.innerHTML = '';
+                
+                data.logs.forEach(log => {
+                    const date = new Date(log.timestamp * 1000).toLocaleString();
+                    
+                    let badgeClass = 'bg-maint';
+                    if(log.mode === 'Playtime') badgeClass = 'bg-play';
+                    if(log.mode === 'Baby-Making') badgeClass = 'bg-baby';
+
+                    let metricsStr = `Vol: ${log.volume}`;
+                    if(log.heatFlag === 1) metricsStr += ' <span style="color:#ff5252;" title="Heat/Fever Flag">🌡️</span>';
+
+                    list.innerHTML += `
+                        <tr id="log-row-${log.id}">
+                            <td>${log.id}</td>
+                            <td>${date}</td>
+                            <td><span class="badge ${badgeClass}">${log.mode}</span></td>
+                            <td style="font-size: 0.9rem; color: #ccc;">${metricsStr}</td>
+                            <td>
+                                <div style="display: flex; gap: 5px;">
+                                    <button class="btn-edit" onclick="editLog(${log.id})">EDIT</button>
+                                    <button class="btn-danger" onclick="deleteLog(${log.id})">PURGE</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                updateTelemetry(data.logs, now, minH, maxH);
+                updateChart(data.logs);
+                updateBlackoutBanner(data.appointment, now);
+            }
         });
 
-        function sendAction(action, payload = {}) {
-            payload.action = action;
-            window.external.sendMessage(JSON.stringify(payload));
+        const resizeObserver = new ResizeObserver(entries => {
+            const container = document.getElementById('appContainer');
+            if (container) {
+                sendAction('RESIZE_WINDOW', { width: 900, height: container.scrollHeight + 80 });
+            }
+        });
+
+        window.onload = () => {
+            resizeObserver.observe(document.getElementById('appContainer'));
+            sendAction('GET_STATE');
+            setInterval(() => { sendAction('GET_STATE'); }, 60000);
+        };
+
+        // --- INLINE EDITING LOGIC --- //
+        
+        function editLog(id) {
+            const log = globalLogs.find(l => l.id === id);
+            if(!log) return;
+            
+            const tr = document.getElementById(`log-row-${id}`);
+            
+            // Format timestamp perfectly for the HTML datetime-local input
+            const d = new Date(log.timestamp * 1000);
+            const tzOffset = d.getTimezoneOffset() * 60000;
+            const localISOTime = (new Date(d - tzOffset)).toISOString().slice(0, 16);
+
+            tr.innerHTML = `
+                <td>${id}</td>
+                <td><input type="datetime-local" id="edit-ts-${id}" value="${localISOTime}" style="width: 140px; font-size: 0.8rem;"></td>
+                <td>
+                    <select id="edit-mode-${id}" onchange="updateEditVolState(${id})" style="font-size: 0.8rem; padding: 4px;">
+                        <option value="Maintenance" ${log.mode==='Maintenance'?'selected':''}>Maintenance</option>
+                        <option value="Playtime" ${log.mode==='Playtime'?'selected':''}>Playtime</option>
+                        <option value="Baby-Making" ${log.mode==='Baby-Making'?'selected':''}>Baby-Making</option>
+                    </select>
+                </td>
+                <td>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <select id="edit-vol-${id}" style="font-size: 0.8rem; padding: 4px;" ${log.mode!=='Maintenance'?'disabled':''}>
+                            <option value="N/A" ${log.volume==='N/A'?'selected':''}>N/A</option>
+                            <option value="Low" ${log.volume==='Low'?'selected':''}>Low</option>
+                            <option value="Normal" ${log.volume==='Normal'?'selected':''}>Normal</option>
+                            <option value="High" ${log.volume==='High'?'selected':''}>High</option>
+                        </select>
+                        <label style="font-size: 0.7rem; display: flex; align-items: center; gap: 4px;">
+                            <input type="checkbox" id="edit-heat-${id}" ${log.heatFlag===1?'checked':''}> Fever/Heat
+                        </label>
+                    </div>
+                </td>
+                <td>
+                    <div style="display: flex; gap: 5px;">
+                        <button style="background-color: #4caf50; padding: 5px 10px; font-size: 0.8rem;" onclick="saveEdit(${id})">SAVE</button>
+                        <button class="btn-danger" style="background-color: #555;" onclick="cancelEdit()">CANCEL</button>
+                    </div>
+                </td>
+            `;
         }
 
-        function addManualLog() {
-            let dateInput = document.getElementById('manualDate').value;
-            if (!dateInput) return;
-            if (dateInput.length === 16) dateInput += ":00";
-            sendAction('MANUAL_LOG', { timestamp: Math.floor(new Date(dateInput).getTime() / 1000) });
-            document.getElementById('manualDate').value = '';
-        }
-
-        function setAppointment() {
-            let dateInput = document.getElementById('ohsuDate').value;
-            if (!dateInput) return;
-            if (dateInput.length === 16) dateInput += ":00";
-            sendAction('SET_APPOINTMENT', { timestamp: Math.floor(new Date(dateInput).getTime() / 1000) });
-            document.getElementById('ohsuDate').value = '';
-        }
-
-        function clearAppointment() {
-            if (confirm("Cancel the active clinical blackout?")) {
-                sendAction('CLEAR_APPOINTMENT');
-                document.getElementById('ohsuDate').value = '';
+        function updateEditVolState(id) {
+            const mode = document.getElementById(`edit-mode-${id}`).value;
+            const volSelect = document.getElementById(`edit-vol-${id}`);
+            if(mode !== 'Maintenance') {
+                volSelect.value = 'N/A';
+                volSelect.disabled = true;
+            } else {
+                if(volSelect.value === 'N/A') volSelect.value = 'Normal'; // Default back to Normal
+                volSelect.disabled = false;
             }
         }
 
-        function deleteLog(id) {
-            if (confirm("Delete this record?")) sendAction('DELETE_LOG', { id: id });
+        function saveEdit(id) {
+            const tsInput = document.getElementById(`edit-ts-${id}`).value;
+            const mode = document.getElementById(`edit-mode-${id}`).value;
+            const vol = document.getElementById(`edit-vol-${id}`).value;
+            const heat = document.getElementById(`edit-heat-${id}`).checked ? 1 : 0;
+            
+            if(!tsInput) return;
+            const ts = Math.floor(new Date(tsInput).getTime() / 1000);
+            
+            sendAction('UPDATE_LOG', { id: id, timestamp: ts, mode: mode, volume: vol, heatFlag: heat });
         }
 
-        window.external.receiveMessage(function(message) {
-            const response = JSON.parse(message);
+        function cancelEdit() {
+            sendAction('GET_STATE'); // Reload the clean state from the database
+        }
+
+        // --- END EDITING LOGIC --- //
+
+        function logEvent(mode) { 
+            let vol = document.getElementById('modVolume').value;
+            let heat = document.getElementById('modHeat').checked ? 1 : 0;
             
-            if (response.action === 'NOTIFY') {
-                alert(response.message);
+            if (mode !== 'Maintenance') {
+                vol = 'N/A';
+            }
+            
+            sendAction('LOG_EVENT', { mode: mode, volume: vol, heatFlag: heat }); 
+            
+            document.getElementById('modHeat').checked = false;
+            document.getElementById('modVolume').value = 'Normal';
+        }
+        
+        function manualLog() {
+            const val = document.getElementById('manualDate').value;
+            const mode = document.getElementById('manualMode').value;
+            
+            let vol = document.getElementById('modVolume').value;
+            let heat = document.getElementById('modHeat').checked ? 1 : 0;
+            
+            if (mode !== 'Maintenance') { vol = 'N/A'; }
+
+            if (val) {
+                const ts = Math.floor(new Date(val).getTime() / 1000);
+                sendAction('MANUAL_LOG', { timestamp: ts, mode: mode, volume: vol, heatFlag: heat });
+                
+                document.getElementById('modHeat').checked = false;
+                document.getElementById('modVolume').value = 'Normal';
+            }
+        }
+
+        function deleteLog(id) { sendAction('DELETE_LOG', { id: id }); }
+        
+        function setAppointment() {
+            const val = document.getElementById('apptDate').value;
+            if (val) {
+                const ts = Math.floor(new Date(val).getTime() / 1000);
+                sendAction('SET_APPOINTMENT', { timestamp: ts });
+            }
+        }
+        
+        function clearAppointment() { sendAction('CLEAR_APPOINTMENT'); }
+
+        function saveSettings() {
+            const min = parseFloat(document.getElementById('minHours').value);
+            const max = parseFloat(document.getElementById('maxHours').value);
+            sendAction('SAVE_SETTINGS', { min: min, max: max });
+        }
+
+        function toggleTestMode() {
+            sendAction('TOGGLE_TEST_MODE');
+        }
+
+        function updateTelemetry(logs, now, minH, maxH) {
+            if (logs.length === 0) {
+                document.getElementById('hudCurrent').innerText = '--';
+                document.getElementById('hudRemaining').innerText = '--';
+                document.getElementById('hudAvg').innerText = '--';
+                document.getElementById('hudMax').innerText = '--';
                 return;
             }
 
-            if (response.action === 'UPDATE_STATE') {
-                const tbody = document.getElementById('logTableBody');
-                tbody.innerHTML = '';
-                response.logs.forEach(log => {
-                    tbody.innerHTML += `<tr>
-                        <td>${new Date(log.timestamp * 1000).toLocaleString()}</td>
-                        <td class="delete-btn" onclick="deleteLog(${log.id})">✕</td>
-                    </tr>`;
-                });
-
-                const now = Math.floor(Date.now() / 1000);
-                const appt = response.appointment;
-                const banner = document.getElementById('blackoutBanner');
-                
-                if (appt > now && (appt - now) <= (5 * 24 * 3600)) {
-                    banner.style.display = 'block';
-                    banner.innerText = `CLINICAL BLACKOUT ACTIVE: ${((appt - now) / 3600).toFixed(1)} hours remaining to target.`;
-                } else {
-                    banner.style.display = 'none';
-                }
-
-                updateTelemetry(response.logs, now);
-                updateChart(response.logs);
-            }
-        });
-
-        function updateTelemetry(logs, now) {
-            if (logs.length === 0) return;
-
-            // Current Delta
             const currentDelta = (now - logs[0].timestamp) / 3600;
-            document.getElementById('hudCurrent').innerText = currentDelta.toFixed(1) + 'h';
-            
-            // Limit T-Minus (Countdown to 72 hours)
-            const remaining = 72 - currentDelta;
+            const curEl = document.getElementById('hudCurrent');
+            curEl.innerText = currentDelta.toFixed(1) + 'h';
+            curEl.style.color = currentDelta < minH ? '#ff9800' : '#007acc';
+
+            const remaining = maxH - currentDelta;
             const remEl = document.getElementById('hudRemaining');
             if (remaining > 0) {
                 remEl.innerText = remaining.toFixed(1) + 'h';
-                remEl.style.color = '#007acc'; // Blue if good
+                remEl.style.color = '#007acc';
             } else {
                 remEl.innerText = 'OVERDUE';
-                remEl.style.color = '#ff5252'; // Red if overdue
+                remEl.style.color = '#ff5252';
             }
 
             if (logs.length < 2) return;
-
-            let totalGaps = 0;
+            
+            let totalGap = 0;
             let maxGap = 0;
+            const gaps = [];
 
             for (let i = 0; i < logs.length - 1; i++) {
                 const gap = (logs[i].timestamp - logs[i+1].timestamp) / 3600;
-                totalGaps += gap;
+                totalGap += gap;
+                gaps.push(gap);
                 if (gap > maxGap) maxGap = gap;
             }
 
-            const avgGap = totalGaps / (logs.length - 1);
-
+            const avgGap = totalGap / gaps.length;
             document.getElementById('hudAvg').innerText = avgGap.toFixed(1) + 'h';
             document.getElementById('hudMax').innerText = maxGap.toFixed(1) + 'h';
+        }
+
+        function updateBlackoutBanner(apptTs, now) {
+            const banner = document.getElementById('blackoutBanner');
+            if (apptTs && apptTs > now) {
+                const days = ((apptTs - now) / 86400).toFixed(1);
+                document.getElementById('blackoutCountdown').innerText = days + ' Days';
+                banner.style.display = 'block';
+            } else {
+                banner.style.display = 'none';
+            }
         }
 
         function updateChart(logs) {
             if (logs.length < 2) return;
             
-            const gaps = [];
             const labels = [];
-            for (let i = 0; i < logs.length - 1; i++) {
-                const diffHours = (logs[i].timestamp - logs[i+1].timestamp) / 3600;
-                gaps.unshift(diffHours.toFixed(1)); 
-                labels.unshift(`Event ${logs.length - 1 - i}`);
+            const dataPts = [];
+            const pointColors = [];
+            const metaData = [];
+
+            for (let i = logs.length - 2; i >= 0; i--) {
+                const gap = (logs[i].timestamp - logs[i+1].timestamp) / 3600;
+                const dateLabel = new Date(logs[i].timestamp * 1000).toLocaleDateString([], {month: 'short', day: 'numeric'});
+                
+                labels.push(dateLabel);
+                dataPts.push(gap.toFixed(1));
+                
+                metaData.push({ mode: logs[i].mode, vol: logs[i].volume, heat: logs[i].heatFlag });
+                
+                if(logs[i].mode === 'Playtime') {
+                    pointColors.push('#9c27b0'); 
+                } else if(logs[i].mode === 'Baby-Making') {
+                    pointColors.push('#4caf50'); 
+                } else {
+                    pointColors.push('#007acc'); 
+                }
             }
 
+            if (myChart) { myChart.destroy(); }
+
             const ctx = document.getElementById('chartCanvas').getContext('2d');
-            if (frequencyChart) frequencyChart.destroy();
-            
-            frequencyChart = new Chart(ctx, {
+            myChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Turnover Delta (Hours)',
-                        data: gaps,
-                        borderColor: '#007acc',
-                        backgroundColor: 'rgba(0, 122, 204, 0.2)',
+                        label: 'Interval Gap (Hours)',
+                        data: dataPts,
+                        borderColor: '#555',
+                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
                         borderWidth: 2,
+                        pointBackgroundColor: pointColors,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
                         fill: true,
                         tension: 0.3
                     }]
@@ -242,20 +503,31 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { 
+                    scales: {
                         y: { beginAtZero: true, grid: { color: '#333' } },
-                        x: { display: false } 
+                        x: { grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) { return `Gap: ${context.parsed.y} Hours`; },
+                                afterLabel: function(context) {
+                                    const meta = metaData[context.dataIndex];
+                                    let lines = [`Type: ${meta.mode}`, `Volume: ${meta.vol}`];
+                                    if (meta.heat === 1) { lines.push(`⚠️ Heat/Fever Recorded`); }
+                                    return lines;
+                                }
+                            }
+                        }
                     }
                 }
             });
         }
 
-        window.onload = () => sendAction('GET_STATE');
-        // Auto-refresh the telemetry every 60 seconds so the countdown actually ticks
-        setInterval(() => {
-            sendAction('GET_STATE');
-        }, 60000);
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { document.getElementById('appContainer').classList.toggle('stealth-active'); }
+        });
     </script>
 </body>
 </html>

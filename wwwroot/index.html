@@ -6,12 +6,9 @@
     <title>PIMS Dashboard</title>
     <style>
         body {
-            background-color: #121212;
-            color: #e0e0e0;
+            background-color: #121212; color: #e0e0e0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 20px;
-            overflow-x: hidden;
+            margin: 0; padding: 20px; overflow-x: hidden;
         }
         h1, h2, h3 { color: #ffffff; margin-top: 0; }
         .container { max-width: 850px; margin: 0 auto; }
@@ -45,6 +42,8 @@
         .btn-edit:hover { background-color: #e65100; }
         .btn-danger { background-color: #d32f2f; padding: 5px 10px; font-size: 0.8rem; }
         .btn-danger:hover { background-color: #9a0007; }
+        .btn-calibrate { background-color: #f57c00; font-size: 0.8rem; padding: 6px; }
+        .btn-calibrate:hover { background-color: #e65100; }
         
         input[type="datetime-local"], input[type="number"], select, input[type="checkbox"] {
             background-color: #1e1e1e; color: #e0e0e0; border: 1px solid #333;
@@ -140,8 +139,9 @@
                         <label style="font-size:0.8rem; color:#888; display:block; margin-bottom:5px;">Max Limit (Hrs)</label>
                         <input type="number" id="maxHours" style="width:100%; box-sizing:border-box;">
                     </div>
-                    <div>
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
                         <button onclick="saveSettings()">Save</button>
+                        <button class="btn-calibrate" onclick="autoCalibrate()">Auto-Calibrate</button>
                     </div>
                 </div>
             </div>
@@ -193,7 +193,7 @@
 
     <script>
         let myChart = null;
-        let globalLogs = []; // Cache logs so we can fetch data during inline edit
+        let globalLogs = []; 
 
         function sendAction(action, data = {}) {
             data.action = action;
@@ -272,15 +272,52 @@
             setInterval(() => { sendAction('GET_STATE'); }, 60000);
         };
 
+        // --- CALIBRATION LOGIC --- //
+        function autoCalibrate() {
+            if (!globalLogs || globalLogs.length < 2) {
+                alert("Not enough data to run calibration. Keep logging!");
+                return;
+            }
+
+            let validGaps = [];
+
+            // globalLogs is sorted newest first. 
+            // We compare current index (i) with the previous chronological event (i+1)
+            for (let i = 0; i < globalLogs.length - 1; i++) {
+                const currentEvent = globalLogs[i];
+                const previousEvent = globalLogs[i + 1];
+
+                // Only evaluate logs where volume was visually confirmed to be successful
+                if (currentEvent.mode === 'Maintenance' && (currentEvent.volume === 'Normal' || currentEvent.volume === 'High')) {
+                    // Exclude corrupted cycles (heat/fever tanks spermatogenesis)
+                    if (currentEvent.heatFlag === 1) continue;
+
+                    const gap = (currentEvent.timestamp - previousEvent.timestamp) / 3600;
+                    validGaps.push(gap);
+                }
+            }
+
+            if (validGaps.length === 0) {
+                alert("No successful volume recoveries recorded yet. Log some 'Normal' or 'High' volume maintenance events to establish a baseline.");
+                return;
+            }
+
+            const sum = validGaps.reduce((a, b) => a + b, 0);
+            const mean = sum / validGaps.length;
+            const roundedMean = parseFloat(mean.toFixed(1));
+
+            if (confirm(`Calibration Complete.\n\nBased on ${validGaps.length} successful recovery cycles, your mean biological recovery rate is ${roundedMean} hours.\n\nWould you like to automatically set this as your 'Min Rest' floor?`)) {
+                document.getElementById('minHours').value = roundedMean;
+                saveSettings();
+            }
+        }
+
         // --- INLINE EDITING LOGIC --- //
-        
         function editLog(id) {
             const log = globalLogs.find(l => l.id === id);
             if(!log) return;
             
             const tr = document.getElementById(`log-row-${id}`);
-            
-            // Format timestamp perfectly for the HTML datetime-local input
             const d = new Date(log.timestamp * 1000);
             const tzOffset = d.getTimezoneOffset() * 60000;
             const localISOTime = (new Date(d - tzOffset)).toISOString().slice(0, 16);
@@ -324,7 +361,7 @@
                 volSelect.value = 'N/A';
                 volSelect.disabled = true;
             } else {
-                if(volSelect.value === 'N/A') volSelect.value = 'Normal'; // Default back to Normal
+                if(volSelect.value === 'N/A') volSelect.value = 'Normal'; 
                 volSelect.disabled = false;
             }
         }
@@ -341,22 +378,13 @@
             sendAction('UPDATE_LOG', { id: id, timestamp: ts, mode: mode, volume: vol, heatFlag: heat });
         }
 
-        function cancelEdit() {
-            sendAction('GET_STATE'); // Reload the clean state from the database
-        }
-
-        // --- END EDITING LOGIC --- //
+        function cancelEdit() { sendAction('GET_STATE'); }
 
         function logEvent(mode) { 
             let vol = document.getElementById('modVolume').value;
             let heat = document.getElementById('modHeat').checked ? 1 : 0;
-            
-            if (mode !== 'Maintenance') {
-                vol = 'N/A';
-            }
-            
+            if (mode !== 'Maintenance') { vol = 'N/A'; }
             sendAction('LOG_EVENT', { mode: mode, volume: vol, heatFlag: heat }); 
-            
             document.getElementById('modHeat').checked = false;
             document.getElementById('modVolume').value = 'Normal';
         }
@@ -364,7 +392,6 @@
         function manualLog() {
             const val = document.getElementById('manualDate').value;
             const mode = document.getElementById('manualMode').value;
-            
             let vol = document.getElementById('modVolume').value;
             let heat = document.getElementById('modHeat').checked ? 1 : 0;
             
@@ -373,7 +400,6 @@
             if (val) {
                 const ts = Math.floor(new Date(val).getTime() / 1000);
                 sendAction('MANUAL_LOG', { timestamp: ts, mode: mode, volume: vol, heatFlag: heat });
-                
                 document.getElementById('modHeat').checked = false;
                 document.getElementById('modVolume').value = 'Normal';
             }
@@ -397,9 +423,7 @@
             sendAction('SAVE_SETTINGS', { min: min, max: max });
         }
 
-        function toggleTestMode() {
-            sendAction('TOGGLE_TEST_MODE');
-        }
+        function toggleTestMode() { sendAction('TOGGLE_TEST_MODE'); }
 
         function updateTelemetry(logs, now, minH, maxH) {
             if (logs.length === 0) {
@@ -441,17 +465,6 @@
             const avgGap = totalGap / gaps.length;
             document.getElementById('hudAvg').innerText = avgGap.toFixed(1) + 'h';
             document.getElementById('hudMax').innerText = maxGap.toFixed(1) + 'h';
-        }
-
-        function updateBlackoutBanner(apptTs, now) {
-            const banner = document.getElementById('blackoutBanner');
-            if (apptTs && apptTs > now) {
-                const days = ((apptTs - now) / 86400).toFixed(1);
-                document.getElementById('blackoutCountdown').innerText = days + ' Days';
-                banner.style.display = 'block';
-            } else {
-                banner.style.display = 'none';
-            }
         }
 
         function updateChart(logs) {

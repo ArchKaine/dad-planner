@@ -89,7 +89,7 @@ namespace WankPlanner
                     cmd.Parameters.AddWithValue("$mode", mode);
                     cmd.Parameters.AddWithValue("$vol", volume);
                     cmd.Parameters.AddWithValue("$heat", heatFlag);
-                    cmd.Parameters.AddWithValue("$id", id); // <-- This was the missing line
+                    cmd.Parameters.AddWithValue("$id", id);
                     cmd.ExecuteNonQuery();
                     SendState(w, db);
                 }
@@ -137,16 +137,37 @@ namespace WankPlanner
 
                     if (isTestMode)
                     {
+                        // Restore real data
                         using var restoreCmd = db.CreateCommand();
-                        restoreCmd.CommandText = "DROP TABLE Logs; ALTER TABLE Logs_Backup RENAME TO Logs;";
+                        restoreCmd.CommandText = @"
+                            DROP TABLE IF EXISTS Logs;
+                            DROP TABLE IF EXISTS Settings;
+                            DROP TABLE IF EXISTS Appointments;
+                            ALTER TABLE Logs_Backup RENAME TO Logs;
+                            ALTER TABLE Settings_Backup RENAME TO Settings;
+                            ALTER TABLE Appointments_Backup RENAME TO Appointments;
+                        ";
                         restoreCmd.ExecuteNonQuery();
                     }
                     else
                     {
+                        // Backup real data and create test environment
                         using var backupCmd = db.CreateCommand();
-                        backupCmd.CommandText = "ALTER TABLE Logs RENAME TO Logs_Backup; CREATE TABLE Logs (Id INTEGER PRIMARY KEY AUTOINCREMENT, Timestamp INTEGER, Mode TEXT DEFAULT 'Maintenance', Volume TEXT DEFAULT 'Normal', HeatFlag INTEGER DEFAULT 0);";
+                        backupCmd.CommandText = @"
+                            ALTER TABLE Logs RENAME TO Logs_Backup;
+                            ALTER TABLE Settings RENAME TO Settings_Backup;
+                            ALTER TABLE Appointments RENAME TO Appointments_Backup;
+                            
+                            CREATE TABLE Logs (Id INTEGER PRIMARY KEY AUTOINCREMENT, Timestamp INTEGER, Mode TEXT DEFAULT 'Maintenance', Volume TEXT DEFAULT 'Normal', HeatFlag INTEGER DEFAULT 0);
+                            
+                            CREATE TABLE Settings (Key TEXT PRIMARY KEY, Value TEXT);
+                            INSERT INTO Settings SELECT * FROM Settings_Backup;
+                            
+                            CREATE TABLE Appointments (Id INTEGER PRIMARY KEY AUTOINCREMENT, Timestamp INTEGER);
+                        ";
                         backupCmd.ExecuteNonQuery();
 
+                        // Seed fake logs
                         long currentTs = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                         var rand = new Random();
                         string[] modes = { "Maintenance", "Playtime", "Baby-Making" };

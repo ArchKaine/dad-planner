@@ -13,6 +13,8 @@ namespace WankPlanner
     {
         static string dbDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PIMS");
         static string dbPath = Path.Combine(dbDir, "inventory.db");
+        // Force explicitly writable connection string
+        static string dbConnectionString = $"Data Source={dbPath};Mode=ReadWriteCreate;";
         static System.Timers.Timer? bgTimer;
 
         [STAThread]
@@ -20,7 +22,7 @@ namespace WankPlanner
         {
             Directory.CreateDirectory(dbDir);
 
-            // Legacy DB Migration: Move local database to AppData if it exists and the new location is empty
+            // Legacy DB Migration
             string legacyDb = "inventory.db";
             string altLegacyDb = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "inventory.db");
             
@@ -29,9 +31,24 @@ namespace WankPlanner
                 try 
                 {
                     if (File.Exists(legacyDb)) File.Move(legacyDb, dbPath);
-                    else if (File.Exists(altLegacyDb)) File.Move(altLegacyDb, dbPath);
+                    // Use Copy instead of Move for the extracted bundle to prevent file-lock crashes
+                    else if (File.Exists(altLegacyDb)) File.Copy(altLegacyDb, dbPath, true);
                 }
-                catch { /* Failsafe to prevent crash if file is locked by the OS */ }
+                catch { /* Failsafe */ }
+            }
+
+            // THE WINDOWS FIX: Strip Read-Only attributes dragged over by Git/MSBuild
+            if (File.Exists(dbPath))
+            {
+                try
+                {
+                    FileAttributes attributes = File.GetAttributes(dbPath);
+                    if ((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
+                    {
+                        File.SetAttributes(dbPath, attributes & ~FileAttributes.ReadOnly);
+                    }
+                }
+                catch { }
             }
 
             InitializeDatabase();
@@ -64,7 +81,7 @@ namespace WankPlanner
                     return; 
                 }
 
-                using var db = new SqliteConnection($"Data Source={dbPath}");
+                using var db = new SqliteConnection(dbConnectionString);
                 db.Open();
 
                 if (action == "GET_STATE")
@@ -249,7 +266,7 @@ namespace WankPlanner
 
         static void InitializeDatabase()
         {
-            using var db = new SqliteConnection($"Data Source={dbPath}");
+            using var db = new SqliteConnection(dbConnectionString);
             db.Open();
             using var cmd = db.CreateCommand();
             cmd.CommandText = @"
@@ -269,7 +286,7 @@ namespace WankPlanner
 
         static void LogEvent(long timestamp, string mode, string volume, int heatFlag, int zincFlag, int macaFlag)
         {
-            using var db = new SqliteConnection($"Data Source={dbPath}");
+            using var db = new SqliteConnection(dbConnectionString);
             db.Open();
             using var cmd = db.CreateCommand();
             cmd.CommandText = "INSERT INTO Logs (Timestamp, Mode, Volume, HeatFlag, ZincFlag, MacaFlag) VALUES ($ts, $mode, $vol, $heat, $zinc, $maca)";
@@ -301,7 +318,7 @@ namespace WankPlanner
 
         static void CheckCeilingThreshold(object? sender, ElapsedEventArgs e)
         {
-            using var db = new SqliteConnection($"Data Source={dbPath}");
+            using var db = new SqliteConnection(dbConnectionString);
             db.Open();
             using var cmdAppt = db.CreateCommand();
             cmdAppt.CommandText = "SELECT Timestamp FROM Appointments ORDER BY Timestamp DESC LIMIT 1";

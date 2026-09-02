@@ -21,7 +21,7 @@ jobs:
             archive_name: pims-win-x64.zip
             archive_cmd: Compress-Archive -Path ./publish/* -DestinationPath pims-win-x64.zip
           - target: linux-x64
-            os: ubuntu-latest
+            os: ubuntu-22.04
             archive_name: pims-linux-x64.tar.gz
             archive_cmd: tar -czvf pims-linux-x64.tar.gz -C ./publish .
           - target: osx-arm64

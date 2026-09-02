@@ -13,7 +13,6 @@ namespace WankPlanner
     {
         static string dbDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PIMS");
         static string dbPath = Path.Combine(dbDir, "inventory.db");
-        // Force explicitly writable connection string
         static string dbConnectionString = $"Data Source={dbPath};Mode=ReadWriteCreate;";
         static System.Timers.Timer? bgTimer;
 
@@ -31,13 +30,12 @@ namespace WankPlanner
                 try 
                 {
                     if (File.Exists(legacyDb)) File.Move(legacyDb, dbPath);
-                    // Use Copy instead of Move for the extracted bundle to prevent file-lock crashes
                     else if (File.Exists(altLegacyDb)) File.Copy(altLegacyDb, dbPath, true);
                 }
                 catch { /* Failsafe */ }
             }
 
-            // THE WINDOWS FIX: Strip Read-Only attributes dragged over by Git/MSBuild
+            // Strip Read-Only attributes
             if (File.Exists(dbPath))
             {
                 try
@@ -55,7 +53,9 @@ namespace WankPlanner
 
             if (args.Length > 0 && args[0] == "--log")
             {
-                LogEvent(DateTimeOffset.UtcNow.ToUnixTimeSeconds(), "Maintenance", "Normal", 0, 0, 0);
+                using var headlessDb = new SqliteConnection(dbConnectionString);
+                headlessDb.Open();
+                LogEvent(headlessDb, DateTimeOffset.UtcNow.ToUnixTimeSeconds(), "Maintenance", "Normal", 0, 0, 0);
                 return;
             }
 
@@ -81,6 +81,7 @@ namespace WankPlanner
                     return; 
                 }
 
+                // Windows Fix: Open exactly ONE connection per UI action
                 using var db = new SqliteConnection(dbConnectionString);
                 db.Open();
 
@@ -98,7 +99,8 @@ namespace WankPlanner
                     
                     long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                     CheckFloorThreshold(db, now);
-                    LogEvent(now, mode, volume, heatFlag, zincFlag, macaFlag);
+                    // Pass the open connection instead of creating a new one
+                    LogEvent(db, now, mode, volume, heatFlag, zincFlag, macaFlag);
                     SendState(w, db);
                 }
                 else if (action == "MANUAL_LOG")
@@ -110,7 +112,8 @@ namespace WankPlanner
                     int zincFlag = doc.RootElement.GetProperty("zincFlag").GetInt32();
                     int macaFlag = doc.RootElement.GetProperty("macaFlag").GetInt32();
                     
-                    LogEvent(ts, mode, volume, heatFlag, zincFlag, macaFlag);
+                    // Pass the open connection
+                    LogEvent(db, ts, mode, volume, heatFlag, zincFlag, macaFlag);
                     SendState(w, db);
                 }
                 else if (action == "UPDATE_LOG")
@@ -268,6 +271,12 @@ namespace WankPlanner
         {
             using var db = new SqliteConnection(dbConnectionString);
             db.Open();
+
+            // Windows Concurrency Fix: Enable WAL mode to prevent background thread lockouts
+            using var walCmd = db.CreateCommand();
+            walCmd.CommandText = "PRAGMA journal_mode=WAL;";
+            walCmd.ExecuteNonQuery();
+
             using var cmd = db.CreateCommand();
             cmd.CommandText = @"
                 CREATE TABLE IF NOT EXISTS Logs (Id INTEGER PRIMARY KEY AUTOINCREMENT, Timestamp INTEGER);
@@ -284,10 +293,9 @@ namespace WankPlanner
             try { using var m5 = db.CreateCommand(); m5.CommandText = "ALTER TABLE Logs ADD COLUMN MacaFlag INTEGER DEFAULT 0"; m5.ExecuteNonQuery(); } catch { }
         }
 
-        static void LogEvent(long timestamp, string mode, string volume, int heatFlag, int zincFlag, int macaFlag)
+        // Updated Signature: Requires the active DB connection to be passed in
+        static void LogEvent(SqliteConnection db, long timestamp, string mode, string volume, int heatFlag, int zincFlag, int macaFlag)
         {
-            using var db = new SqliteConnection(dbConnectionString);
-            db.Open();
             using var cmd = db.CreateCommand();
             cmd.CommandText = "INSERT INTO Logs (Timestamp, Mode, Volume, HeatFlag, ZincFlag, MacaFlag) VALUES ($ts, $mode, $vol, $heat, $zinc, $maca)";
             cmd.Parameters.AddWithValue("$ts", timestamp);

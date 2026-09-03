@@ -43,7 +43,6 @@ PIMS is a highly over-engineered, offline-first sexual frequency, biological bas
   # Nobara/Fedora
   sudo dnf install webkit2gtk4.0
 
-```
 
 ### Running the Application in Dev Mode
 
@@ -93,9 +92,5 @@ dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=
 
 ```bash
 dotnet publish -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=true
-
-```
-
-```
 
 ```

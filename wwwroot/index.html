@@ -77,8 +77,15 @@
         .stealth-active .sensitive-data { filter: blur(10px); opacity: 0.3; pointer-events: none; }
         ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: #1e1e1e; }
         ::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; } ::-webkit-scrollbar-thumb:hover { background: #777; }
+
+        /* ApexCharts Tooltip Dark Mode Overrides */
+        .apexcharts-tooltip { background: #252526 !important; border: 1px solid #444 !important; color: #fff !important; box-shadow: 0 4px 6px rgba(0,0,0,0.5) !important; }
+        .apexcharts-tooltip-title { background: #1e1e1e !important; border-bottom: 1px solid #444 !important; font-family: monospace; font-size: 12px !important; }
+        .chart-tooltip-content { padding: 10px; font-size: 12px; line-height: 1.5; }
+        .apexcharts-toolbar { z-index: 2 !important; }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Swapped to ApexCharts -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 </head>
 <body>
     <div class="container" id="appContainer">
@@ -118,8 +125,9 @@
             </div>
         </div>
 
-        <div class="sensitive-data" style="position: relative; height: 160px; width: 100%; margin-bottom: 20px;">
-            <canvas id="chartCanvas"></canvas>
+        <!-- Height increased to 280px to accommodate scroll/zoom UI, swapped from canvas to div -->
+        <div class="sensitive-data" style="position: relative; height: 280px; width: 100%; margin-bottom: 20px;">
+            <div id="chartCanvas" style="height: 100%;"></div>
         </div>
 
         <div class="modifier-bar sensitive-data">
@@ -327,7 +335,6 @@
         const resizeObserver = new ResizeObserver(entries => {
             const container = document.getElementById('appContainer');
             if (container) {
-                // Expanded height to accommodate the cleaner layout without crushing
                 sendAction('RESIZE_WINDOW', { width: 900, height: container.scrollHeight + 100 });
             }
         });
@@ -645,83 +652,117 @@
             }
         }
 
+        // UPGRADED APEXCHARTS IMPLEMENTATION
         function updateChart(logs) {
             if (logs.length < 2) return;
             
-            const labels = [];
-            const dataPts = [];
-            const pointColors = [];
-            const metaData = [];
+            let chronological = [...logs].reverse();
+            let chartData = [];
+            let discreteMarkers = [];
 
-            for (let i = logs.length - 2; i >= 0; i--) {
-                const gap = (logs[i].timestamp - logs[i+1].timestamp) / 3600;
-                const dateLabel = new Date(logs[i].timestamp * 1000).toLocaleDateString([], {month: 'short', day: 'numeric'});
-                
-                labels.push(dateLabel);
-                dataPts.push(gap.toFixed(1));
-                
-                metaData.push({ 
-                    mode: logs[i].mode, 
-                    vol: logs[i].volume, 
-                    heat: logs[i].heatFlag,
-                    zinc: logs[i].zincFlag,
-                    maca: logs[i].macaFlag
+            for (let i = 1; i < chronological.length; i++) {
+                let current = chronological[i];
+                let previous = chronological[i - 1];
+                let gapHours = (current.timestamp - previous.timestamp) / 3600;
+
+                // Retain your original color logic
+                let pColor = '#007acc';
+                if(current.mode === 'Playtime') pColor = '#9c27b0';
+                else if(current.mode === 'Baby-Making') pColor = '#4caf50';
+
+                chartData.push({
+                    x: current.timestamp * 1000,
+                    y: parseFloat(gapHours.toFixed(1)),
+                    logData: current
                 });
-                
-                if(logs[i].mode === 'Playtime') {
-                    pointColors.push('#9c27b0'); 
-                } else if(logs[i].mode === 'Baby-Making') {
-                    pointColors.push('#4caf50'); 
-                } else {
-                    pointColors.push('#007acc'); 
-                }
+
+                // Apply correct color to individual data points
+                discreteMarkers.push({
+                    seriesIndex: 0,
+                    dataPointIndex: i - 1,
+                    fillColor: pColor,
+                    strokeColor: '#1e1e1e',
+                    size: 5
+                });
             }
 
-            if (myChart) { myChart.destroy(); }
+            const minTarget = parseFloat(document.getElementById('minHours').value) || 24;
+            const maxTarget = parseFloat(document.getElementById('maxHours').value) || 72;
 
-            const ctx = document.getElementById('chartCanvas').getContext('2d');
-            myChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Interval Gap (Hours)',
-                        data: dataPts,
-                        borderColor: '#555',
-                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                        borderWidth: 2,
-                        pointBackgroundColor: pointColors,
-                        pointRadius: 5,
-                        pointHoverRadius: 7,
-                        fill: true,
-                        tension: 0.3
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: '#333' } },
-                        x: { grid: { display: false } }
+            const options = {
+                series: [{
+                    name: 'Recovery Gap',
+                    data: chartData
+                }],
+                chart: {
+                    type: 'area',
+                    height: 280,
+                    foreColor: '#aaa',
+                    background: 'transparent',
+                    toolbar: {
+                        show: true,
+                        autoSelected: 'pan',
+                        tools: { zoom: true, zoomin: true, zoomout: true, pan: true, reset: true }
                     },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) { return `Gap: ${context.parsed.y} Hours`; },
-                                afterLabel: function(context) {
-                                    const meta = metaData[context.dataIndex];
-                                    let lines = [`Type: ${meta.mode}`, `Volume: ${meta.vol}`];
-                                    if (meta.heat === 1) lines.push(`⚠️ Heat/Fever Recorded`);
-                                    if (meta.zinc === 1) lines.push(`💊 Zinc Supplement`);
-                                    if (meta.maca === 1) lines.push(`🌿 Maca Root`);
-                                    return lines;
-                                }
-                            }
+                    animations: { enabled: false }
+                },
+                colors: ['#555'],
+                fill: {
+                    type: 'gradient',
+                    gradient: { shadeIntensity: 1, opacityFrom: 0.3, opacityTo: 0.05, stops: [0, 100] }
+                },
+                dataLabels: { enabled: false },
+                stroke: { curve: 'smooth', width: 2, colors: ['#555'] },
+                markers: {
+                    size: 0,
+                    discrete: discreteMarkers,
+                    hover: { size: 7 }
+                },
+                xaxis: {
+                    type: 'datetime',
+                    tooltip: { enabled: false }
+                },
+                yaxis: {
+                    title: { text: 'Gap (Hours)', style: { color: '#888' } },
+                    min: 0
+                },
+                annotations: {
+                    yAxis: [
+                        { y: minTarget, borderColor: '#d32f2f', strokeDashArray: 4, label: { text: 'Min Rest', style: { color: '#fff', background: '#d32f2f' } } },
+                        { y: maxTarget, borderColor: '#f57c00', strokeDashArray: 4, label: { text: 'Max Limit', style: { color: '#fff', background: '#f57c00' } } }
+                    ]
+                },
+                tooltip: {
+                    custom: function({series, seriesIndex, dataPointIndex, w}) {
+                        const item = w.globals.initialSeries[seriesIndex].data[dataPointIndex];
+                        const log = item.logData;
+                        const dateStr = new Date(log.timestamp * 1000).toLocaleString();
+                        
+                        let lines = `<div><strong>Mode:</strong> ${log.mode}</div>`;
+                        lines += `<div><strong>Volume:</strong> ${log.volume}</div>`;
+                        let flags = [];
+                        if (log.heatFlag === 1) flags.push(`⚠️ Heat`);
+                        if (log.zincFlag === 1) flags.push(`💊 Zinc`);
+                        if (log.macaFlag === 1) flags.push(`🌿 Maca`);
+                        
+                        if (flags.length > 0) {
+                            lines += `<hr style="border:0; border-top:1px solid #444; margin:5px 0;"><div>${flags.join(' | ')}</div>`;
                         }
+
+                        return `
+                            <div class="apexcharts-tooltip-title" style="padding:5px 10px; background:#1e1e1e; border-bottom:1px solid #333;">${dateStr}</div>
+                            <div class="chart-tooltip-content" style="padding:10px; font-size:12px;">
+                                <div style="margin-bottom:4px;"><strong style="color:#007acc;">Gap:</strong> ${item.y} hrs</div>
+                                ${lines}
+                            </div>
+                        `;
                     }
                 }
-            });
+            };
+
+            if (myChart) { myChart.destroy(); }
+            myChart = new ApexCharts(document.getElementById('chartCanvas'), options);
+            myChart.render();
         }
 
         document.addEventListener('keydown', (e) => {

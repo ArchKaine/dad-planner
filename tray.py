@@ -56,12 +56,58 @@ def log_event():
     
     # Ensured table name matches the C# initialization schema ('Logs')
     c.execute("CREATE TABLE IF NOT EXISTS Logs (Id INTEGER PRIMARY KEY AUTOINCREMENT, Timestamp INTEGER)")
-    c.execute("INSERT INTO Logs (Timestamp) VALUES (?)", (int(time.time()),))
     
+    try:
+        c.execute("INSERT INTO Logs (Timestamp, Mode, Volume) VALUES (?, 'Maintenance', 'Normal')", (int(time.time()),))
+    except sqlite3.OperationalError:
+        c.execute("INSERT INTO Logs (Timestamp) VALUES (?)", (int(time.time()),))
+        
     conn.commit()
     conn.close()
     
     show_notification('System Task', 'Protocol logged successfully.')
+
+
+def check_status():
+    """Calculates time since last event, adjusting thresholds dynamically based on recent volume."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        
+        # Read the SLA threshold from Settings, default to 72.0
+        c.execute("SELECT Value FROM Settings WHERE Key = 'max_threshold'")
+        setting_row = c.fetchone()
+        base_threshold = float(setting_row[0]) if setting_row else 72.0
+        
+        # Check recent log
+        try:
+            c.execute("SELECT Timestamp, IFNULL(Volume, 'Normal') FROM Logs ORDER BY Timestamp DESC LIMIT 1")
+        except sqlite3.OperationalError:
+            c.execute("SELECT Timestamp, 'Normal' FROM Logs ORDER BY Timestamp DESC LIMIT 1")
+            
+        row = c.fetchone()
+        conn.close()
+
+        if row:
+            last_event_time = row[0]
+            last_volume = row[1]
+            
+            delta_hours = (time.time() - last_event_time) / 3600.0
+            active_threshold = base_threshold
+            
+            # SMART LOGIC: Extend SLA if volume was low
+            if last_volume == "Low":
+                active_threshold += 24.0
+                
+            if delta_hours > active_threshold:
+                show_notification('System Monitor', f'Routine Maintenance Required. ({delta_hours:.1f}h elapsed)')
+            else:
+                show_notification('System Monitor', f'System optimal. Delta: {delta_hours:.1f}h. Limit: {active_threshold}h')
+        else:
+            show_notification('System Monitor', 'No records found. Initial baseline required.')
+            
+    except Exception as e:
+        show_notification('Database Error', str(e))
 
 
 def open_dashboard():
@@ -118,6 +164,9 @@ if __name__ == "__main__":
 
     log_action = menu.addAction("Execute Maintenance Protocol")
     log_action.triggered.connect(log_event)
+
+    check_action = menu.addAction("Check System Status")
+    check_action.triggered.connect(check_status)
 
     open_action = menu.addAction("Open Dashboard")
     open_action.triggered.connect(open_dashboard)

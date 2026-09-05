@@ -351,13 +351,20 @@ namespace WankPlanner
                 }
 
                 using var cmdLog = db.CreateCommand();
-                cmdLog.CommandText = "SELECT Timestamp FROM Logs ORDER BY Timestamp DESC LIMIT 1";
-                var logResult = cmdLog.ExecuteScalar();
-                if (logResult != null)
+                cmdLog.CommandText = "SELECT Timestamp, IFNULL(Volume, 'Normal') FROM Logs ORDER BY Timestamp DESC LIMIT 1";
+                using var reader = cmdLog.ExecuteReader();
+                if (reader.Read())
                 {
-                    long lastTimestamp = Convert.ToInt64(logResult);
+                    long lastTimestamp = reader.GetInt64(0);
+                    string lastVolume = reader.GetString(1);
                     double hoursSinceLast = (now - lastTimestamp) / 3600.0;
                     double maxThreshold = GetSetting(db, "max_threshold", 72.0);
+
+                    if (lastVolume == "Low")
+                    {
+                        maxThreshold += 24.0;
+                    }
+
                     if (hoursSinceLast > maxThreshold)
                     {
                         ShowNotification("Maintenance Overdue", $"Routine turnover limit of {maxThreshold}h has been exceeded. ({hoursSinceLast:F1}h elapsed)");
@@ -404,6 +411,22 @@ namespace WankPlanner
             double min = GetSetting(db, "min_threshold", 24.0);
             double max = GetSetting(db, "max_threshold", 72.0);
 
+            bool isOverdue = false;
+            string currentVol = logs.Count > 0 ? ((dynamic)logs[0]).volume : "Normal";
+            double activeMax = (currentVol == "Low") ? max + 24.0 : max;
+            
+            if (logs.Count > 0)
+            {
+                long lastTimestamp = ((dynamic)logs[0]).timestamp;
+                long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                double hoursSinceLast = (now - lastTimestamp) / 3600.0;
+
+                if (hoursSinceLast > activeMax)
+                {
+                    isOverdue = true;
+                }
+            }
+
             using var checkTestCmd = db.CreateCommand();
             checkTestCmd.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='Logs_Backup'";
             bool isTestMode = checkTestCmd.ExecuteScalar() != null;
@@ -413,7 +436,12 @@ namespace WankPlanner
                 action = "UPDATE_STATE",
                 logs = logs,
                 appointment = appt,
-                settings = new { min = min, max = max },
+                settings = new { 
+                    min = min, 
+                    max = max,
+                    activeMax = activeMax,
+                    isOverdue = isOverdue
+                },
                 isTestMode = isTestMode
             };
 

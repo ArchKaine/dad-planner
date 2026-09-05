@@ -10,9 +10,21 @@ PIMS is a highly over-engineered, offline-first sexual frequency, biological bas
 
 * **Backend:** C# / .NET 8.0 (Headless background capabilities, native OS notifications, QuestPDF for native vector document generation)
 * **Frontend:** Photino.NET (Native cross-platform webview: WebView2 on Windows, WebKitGTK on Linux, WKWebView on macOS)
-* **UI/UX:** HTML5, CSS3, Vanilla JavaScript, ApexCharts (bundled)
+* **UI/UX:** HTML5, CSS3, Vanilla JavaScript
 * **Database:** SQLite3 (Local Only, WAL-mode enabled, connection pooling disabled for aggressive OS un-locking, BLOB storage for raw files)
 * **CI/CD:** Automated GitHub Actions pipeline for multi-OS binary compilation
+
+## 📦 Dependencies & Libraries
+
+**Backend (C# / NuGet):**
+
+* `Photino.NET` - Cross-platform native window and webview bindings.
+* `Microsoft.Data.Sqlite` - Lightweight, local database driver for WAL-mode telemetry storage.
+* `QuestPDF` - Native C# vector graphics engine for synthesizing the 90-Day PDF reports.
+
+**Frontend:**
+
+* `ApexCharts` - Lightweight SVG charting library for the interactive timeline, event distribution, and yield profiles.
 
 ## ✨ Key Features
 

@@ -704,8 +704,36 @@
             return { isCompromised: false };
         }
 
+        // --- WINDOWS CROSS-COMPILE MOJIBAKE DECODER ---
+        function decodeWindowsMojibake(str) {
+            // 0x227B is the exact character '≻', which is '{"' misread by Windows as UTF-16 LE
+            if (str && str.length > 0 && str.charCodeAt(0) === 0x227b) {
+                let bytes = new Uint8Array(str.length * 2);
+                for (let i = 0; i < str.length; i++) {
+                    let code = str.charCodeAt(i);
+                    bytes[i * 2] = code & 0xFF;        // Extract lower byte
+                    bytes[i * 2 + 1] = code >> 8;      // Extract upper byte
+                }
+                
+                let decoded = new TextDecoder('utf-8').decode(bytes);
+                
+                // Windows pads the end of the COM memory buffer with trailing garbage bytes.
+                // JSON.parse crashes if it sees them. We find the true end of the JSON object
+                // and ruthlessly chop off anything that comes after it.
+                const lastBrace = decoded.lastIndexOf('}');
+                if (lastBrace !== -1) {
+                    return decoded.substring(0, lastBrace + 1);
+                }
+                return decoded;
+            }
+            return str;
+        }
+
         window.external.receiveMessage(message => {
             try {
+                // Intercept and fix the Windows encoding bug before JSON parsing
+                message = decodeWindowsMojibake(message);
+                
                 const data = JSON.parse(message);
                 
                 if (data.action === 'SHOW_ERROR') {

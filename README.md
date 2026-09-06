@@ -1,13 +1,14 @@
-# PIMS: Personal Inventory Maintenance System
+# Dad-Planner
 
-(Formerly known as dad-planner / WankPlanner)
-
-<img width="2560" height="1440" alt="SMU-dad-planner" src="https://github.com/user-attachments/assets/c8f53f3d-7bd1-42bf-8d2c-5f5a956c1998" />
-
+This software is intended for guys like me who want to be a dad, and who are interested in taking full control of their data and their telemetry.
 
 Standard calendar apps aren't built for clinical reproductive health. When you need to manage strict medical testing requirements (like OHSU semen analysis protocols), maintain baseline prostate health with rigid turnover limits, and track supplement efficacy, you need precise telemetry. More importantly, you need that data kept completely offline.
 
-PIMS is a highly over-engineered, offline-first sexual frequency, biological baseline, and clinical tracker. It enforces routine health cycles, captures specific clinical variables (thermal stress, subjective volume, biological saturation), and provides interactive local statistical analysis—all while ensuring your most private biological data never leaves your machine.
+Even if I can't become a dad (Which at time of writing is still up in the air), this is my contribution to those who want to. To you guys, I wish the best of luck and more than a few 'swimmers' jokes :)
+
+Dad-Planner is a highly over-engineered, offline-first sexual frequency, biological baseline, and clinical tracker. It enforces routine health cycles, captures specific clinical variables (thermal stress, subjective volume, biological saturation), and provides interactive local statistical analysis—all while ensuring your most private biological data never leaves your machine.
+
+---
 
 ## 🏗️ Architecture Stack
 
@@ -29,6 +30,8 @@ PIMS is a highly over-engineered, offline-first sexual frequency, biological bas
 
 * **ApexCharts** - Lightweight SVG charting library for the interactive timeline, event distribution, and yield profiles.
 
+---
+
 ## ✨ Key Features
 
 ### 📊 Clinical Telemetry & Tracking
@@ -38,7 +41,7 @@ PIMS is a highly over-engineered, offline-first sexual frequency, biological bas
 * **Quad-State Logging:** Distinguish between Maintenance (solo/blue), Playtime (recreational/red), Baby-Making (conception/green), and Clinical-Lab (medical baselines/slate) with single-click action buttons.
 * **Granular Clinical Metrics:** Dedicated numerical inputs for formal semen analysis parameters, capturing Clinical Volume (mL), Concentration (M), Total Motility (%), Progressive Motility (%), Morphology (%), and pH Level.
 * **Lab Report PDF Vault:** Attach, store (as SQLite BLOBs), and launch original laboratory PDF results directly from the dashboard via your native OS document viewer.
-* **Pre-Log Modifiers:** Track crucial biological variables like subjective volume (Dry/Low/Normal/High), a 4-level Thermal Stress Index, and dietary supplement stacks (Zinc, Maca).
+* **Pre-Log Modifiers:** Track crucial biological variables like subjective volume (Dry/Low/Normal/High), a 4-level Thermal Stress Index, and dietary supplement stacks (Zinc, Maca, Vitamin D3, Vitamin C).
 * **365-Day Activity Matrix:** GitHub-style density heatmap plotting year-round event frequency and maximum daily volume yields.
 * **Interactive Charting:** Pan/zoom-enabled timeline generated via ApexCharts, featuring custom tooltips that display the clinical metadata, lab metrics, and biological saturation flags for every recorded gap.
 
@@ -46,7 +49,7 @@ PIMS is a highly over-engineered, offline-first sexual frequency, biological bas
 
 * **74-Day Thermal Shadow Engine:** Maps the delayed biological impact of severe heat events (>101°F fever or prolonged hot tub exposure) on spermatogenesis. Automatically flags the system as compromised for a full 74-day cycle to prevent corrupting statistical baselines or wasting money on premature clinical testing.
 * **Ground-Truth Clinical Override:** Dynamically breaks an active Thermal Shadow if a subsequent formal lab test returns normal WHO baseline metrics (≥ 15M/mL Concentration, ≥ 40% Motility), proving system health and restoring analytical tracking.
-* **Biological Saturation Analysis:** Evaluates physiological buildup by mapping a 21-day lagging window to determine supplement saturation. Runs statistical comparisons on contiguous, uncompromised datasets (excluding Thermal Shadows) to prove whether Zinc mathematically increases volume yield and whether Maca Root accelerates recovery speed.
+* **Biological Saturation Analysis:** Evaluates physiological buildup by mapping a rolling window to determine supplement saturation. Runs statistical comparisons on contiguous, uncompromised datasets (excluding Thermal Shadows) to prove whether specific supplements mathematically increase volume yield or accelerate recovery speed.
 * **Auto-Calibration Engine:** Mathematically analyzes historical recovery gaps to automatically recommend personalized Floor and Ceiling thresholds based on your standard deviation.
 * **90-Day Retrospective Report:** Instantly synthesize your last three months of data into a formatted, printable PDF. Utilizes native C# vector drawing to generate crisp Event Distribution and Yield Profile bar charts.
 * **Clinical Blackout Mode:** Locks in mandatory abstinence windows and suppresses all overdue notifications prior to scheduled medical baseline testing (e.g., OHSU Andrology Lab protocols).
@@ -58,9 +61,11 @@ PIMS is a highly over-engineered, offline-first sexual frequency, biological bas
 * **Stealth Mode (Panic Button):** Hardware-level keybinding (Press `Escape`) instantly applies a CSS blur filter and disables pointer events on all sensitive data on the screen.
 * **Non-Destructive Sandbox Mode:** Safely swaps your live SQLite database into a backup partition, seeds the UI with 150 records of procedurally generated, biologically weighted fake data for visual testing, and seamlessly restores your real data when you exit.
 
+---
+
 ## 🛠️ Installation & Setup
 
-**Prerequisites**
+**Prerequisites:**
 
 * .NET SDK 8.0+ installed on your system.
 * For Linux users: `webkit2gtk4.0` is required for the Photino UI.
@@ -71,7 +76,7 @@ sudo dnf install webkit2gtk4.0
 
 ```
 
-**Running the Application in Dev Mode**
+**Running the Application in Dev Mode:**
 To launch the desktop UI directly from the source code:
 
 ```bash
@@ -79,7 +84,7 @@ dotnet run
 
 ```
 
-**Headless Quick-Log**
+**Headless Quick-Log:**
 To log a standard "Maintenance" event instantly from the terminal or a bash script without opening the UI:
 
 ```bash
@@ -87,11 +92,13 @@ dotnet run -- --log
 
 ```
 
+---
+
 ## 🚀 Compilation & Deployment
 
-PIMS is configured to compile into standalone executables via standard .NET publish commands.
+Dad-Planner is configured to compile into standalone executables via standard .NET publish commands.
 
-**⚠️ OS Stability Warning**
+**⚠️ OS Stability Warning:**
 
 * **Linux (Nobara/KDE):** Fully tested, stable, and production-ready. Wayland `.Center()` window quirks resolved.
 * **Windows:** Currently experiencing known issues with aggressive OS-level file locking and SQLite connection pooling that prevents reliable database writes. Proceed with caution.

@@ -2,6 +2,9 @@
 
 (Formerly known as dad-planner / WankPlanner)
 
+<img width="2560" height="1440" alt="SMU-dad-planner" src="https://github.com/user-attachments/assets/c8f53f3d-7bd1-42bf-8d2c-5f5a956c1998" />
+
+
 Standard calendar apps aren't built for clinical reproductive health. When you need to manage strict medical testing requirements (like OHSU semen analysis protocols), maintain baseline prostate health with rigid turnover limits, and track supplement efficacy, you need precise telemetry. More importantly, you need that data kept completely offline.
 
 PIMS is a highly over-engineered, offline-first sexual frequency, biological baseline, and clinical tracker. It enforces routine health cycles, captures specific clinical variables (thermal stress, subjective volume, biological saturation), and provides interactive local statistical analysis—all while ensuring your most private biological data never leaves your machine.

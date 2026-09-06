@@ -55,7 +55,7 @@ namespace WankPlanner
             {
                 using var headlessDb = new SqliteConnection(dbConnectionString);
                 headlessDb.Open();
-                LogEvent(headlessDb, DateTimeOffset.UtcNow.ToUnixTimeSeconds(), "Maintenance", "Normal", 0, 0, 0);
+                LogEvent(headlessDb, DateTimeOffset.UtcNow.ToUnixTimeSeconds(), "Maintenance", "Normal", 0, "{}");
                 return;
             }
 
@@ -131,8 +131,7 @@ namespace WankPlanner
                         string volume = doc.RootElement.TryGetProperty("volume", out var vProp) ? vProp.GetString() ?? "Normal" : "Normal";
                         
                         int heatFlag = doc.RootElement.TryGetProperty("heatFlag", out var hProp) ? hProp.GetInt32() : 0;
-                        int zincFlag = doc.RootElement.TryGetProperty("zincFlag", out var zProp) ? zProp.GetInt32() : 0;
-                        int macaFlag = doc.RootElement.TryGetProperty("macaFlag", out var maProp) ? maProp.GetInt32() : 0;
+                        string supplements = doc.RootElement.TryGetProperty("supplements", out var suppProp) ? suppProp.GetString() ?? "{}" : "{}";
 
                         int conc = doc.RootElement.TryGetProperty("concentration", out var cProp) && cProp.ValueKind == JsonValueKind.Number ? cProp.GetInt32() : 0;
                         int mot = doc.RootElement.TryGetProperty("motility", out var motProp) && motProp.ValueKind == JsonValueKind.Number ? motProp.GetInt32() : 0;
@@ -148,7 +147,7 @@ namespace WankPlanner
                         
                         if (action == "LOG_EVENT" && volume != "None" && volume != "N/A") CheckFloorThreshold(db, ts);
                         
-                        LogEvent(db, ts, mode, volume, heatFlag, zincFlag, macaFlag, conc, mot, morph, clinicalVol, progMot, ph, labFileName, labBlob);
+                        LogEvent(db, ts, mode, volume, heatFlag, supplements, conc, mot, morph, clinicalVol, progMot, ph, labFileName, labBlob);
                         SendState(w, db);
                     }
                     else if (action == "UPDATE_LOG")
@@ -158,8 +157,7 @@ namespace WankPlanner
                         string mode = doc.RootElement.GetProperty("mode").GetString() ?? "Maintenance";
                         string volume = doc.RootElement.GetProperty("volume").GetString() ?? "Normal";
                         int heatFlag = doc.RootElement.GetProperty("heatFlag").GetInt32();
-                        int zincFlag = doc.RootElement.GetProperty("zincFlag").GetInt32();
-                        int macaFlag = doc.RootElement.GetProperty("macaFlag").GetInt32();
+                        string supplements = doc.RootElement.TryGetProperty("supplements", out var suppProp) ? suppProp.GetString() ?? "{}" : "{}";
 
                         double clinicalVol = doc.RootElement.TryGetProperty("clinicalVol", out var cvProp) && cvProp.ValueKind == JsonValueKind.Number ? cvProp.GetDouble() : 0.0;
                         int conc = doc.RootElement.TryGetProperty("concentration", out var cProp) && cProp.ValueKind == JsonValueKind.Number ? cProp.GetInt32() : 0;
@@ -172,7 +170,7 @@ namespace WankPlanner
                         cmd.CommandText = @"
                             UPDATE Logs SET 
                                 Timestamp = $ts, Mode = $mode, Volume = $vol, 
-                                HeatFlag = $heat, ZincFlag = $zinc, MacaFlag = $maca, 
+                                HeatFlag = $heat, Supplements = $supps, 
                                 ClinicalVol = $cvol, Concentration = $conc, Motility = $mot, 
                                 ProgMotility = $pmot, Morphology = $morph, PhLevel = $ph 
                             WHERE Id = $id";
@@ -181,8 +179,7 @@ namespace WankPlanner
                         cmd.Parameters.AddWithValue("$mode", mode);
                         cmd.Parameters.AddWithValue("$vol", volume);
                         cmd.Parameters.AddWithValue("$heat", heatFlag);
-                        cmd.Parameters.AddWithValue("$zinc", zincFlag);
-                        cmd.Parameters.AddWithValue("$maca", macaFlag);
+                        cmd.Parameters.AddWithValue("$supps", supplements);
                         cmd.Parameters.AddWithValue("$cvol", clinicalVol);
                         cmd.Parameters.AddWithValue("$conc", conc);
                         cmd.Parameters.AddWithValue("$mot", mot);
@@ -262,7 +259,7 @@ namespace WankPlanner
                                 ALTER TABLE Settings RENAME TO Settings_Backup;
                                 ALTER TABLE Appointments RENAME TO Appointments_Backup;
                                 
-                                CREATE TABLE Logs (Id INTEGER PRIMARY KEY AUTOINCREMENT, Timestamp INTEGER, Mode TEXT DEFAULT 'Maintenance', Volume TEXT DEFAULT 'Normal', HeatFlag INTEGER DEFAULT 0, ZincFlag INTEGER DEFAULT 0, MacaFlag INTEGER DEFAULT 0, Concentration INTEGER, Motility INTEGER, Morphology INTEGER, ClinicalVol REAL, ProgMotility INTEGER, PhLevel REAL, LabReportBlob BLOB, LabReportFileName TEXT);
+                                CREATE TABLE Logs (Id INTEGER PRIMARY KEY AUTOINCREMENT, Timestamp INTEGER, Mode TEXT DEFAULT 'Maintenance', Volume TEXT DEFAULT 'Normal', HeatFlag INTEGER DEFAULT 0, Supplements TEXT DEFAULT '{}', Concentration INTEGER, Motility INTEGER, Morphology INTEGER, ClinicalVol REAL, ProgMotility INTEGER, PhLevel REAL, LabReportBlob BLOB, LabReportFileName TEXT);
                                 
                                 CREATE TABLE Settings (Key TEXT PRIMARY KEY, Value TEXT);
                                 INSERT INTO Settings SELECT * FROM Settings_Backup;
@@ -282,6 +279,10 @@ namespace WankPlanner
                             {
                                 int randomZinc = (i < 75) ? 1 : 0;
                                 int randomMaca = (i < 75) ? 1 : 0;
+                                int randomVitD = (i < 75) ? 1 : 0;
+                                int randomVitC = (i < 75) ? 1 : 0;
+                                
+                                string fakeSupps = $"{{\"zinc\":{randomZinc},\"maca\":{randomMaca},\"vitD\":{randomVitD},\"vitC\":{randomVitC}}}";
                                 
                                 int gapHours = rand.Next(35, 80);
                                 if (randomMaca == 1) gapHours -= rand.Next(10, 20); 
@@ -321,13 +322,12 @@ namespace WankPlanner
                                 }
                                 
                                 using var insertCmd = db.CreateCommand();
-                                insertCmd.CommandText = "INSERT INTO Logs (Timestamp, Mode, Volume, HeatFlag, ZincFlag, MacaFlag, Concentration, Motility, Morphology, ClinicalVol, ProgMotility, PhLevel) VALUES ($ts, $mode, $vol, $heat, $zinc, $maca, $conc, $mot, $morph, $cvol, $pmot, $ph)";
+                                insertCmd.CommandText = "INSERT INTO Logs (Timestamp, Mode, Volume, HeatFlag, Supplements, Concentration, Motility, Morphology, ClinicalVol, ProgMotility, PhLevel) VALUES ($ts, $mode, $vol, $heat, $supps, $conc, $mot, $morph, $cvol, $pmot, $ph)";
                                 insertCmd.Parameters.AddWithValue("$ts", currentTs);
                                 insertCmd.Parameters.AddWithValue("$mode", randomMode);
                                 insertCmd.Parameters.AddWithValue("$vol", randomVol);
                                 insertCmd.Parameters.AddWithValue("$heat", randomHeat);
-                                insertCmd.Parameters.AddWithValue("$zinc", randomZinc);
-                                insertCmd.Parameters.AddWithValue("$maca", randomMaca);
+                                insertCmd.Parameters.AddWithValue("$supps", fakeSupps);
                                 insertCmd.Parameters.AddWithValue("$conc", conc);
                                 insertCmd.Parameters.AddWithValue("$mot", mot);
                                 insertCmd.Parameters.AddWithValue("$morph", morph);
@@ -344,6 +344,10 @@ namespace WankPlanner
                 }
                 catch (Exception ex)
                 {
+                    // Force the exact C# stack trace into the UI table so we can read it
+                    var errorPayload = new { action = "SHOW_ERROR", message = ex.ToString() };
+                    w.SendWebMessage(JsonSerializer.Serialize(errorPayload));
+                    
                     ShowNotification("PIMS Database Error", ex.Message);
                 }
             });
@@ -375,21 +379,23 @@ namespace WankPlanner
                 ";
                 cmd.ExecuteNonQuery();
 
+                // Legacy Columns
                 try { using var m1 = db.CreateCommand(); m1.CommandText = "ALTER TABLE Logs ADD COLUMN Mode TEXT DEFAULT 'Maintenance'"; m1.ExecuteNonQuery(); } catch { }
                 try { using var m2 = db.CreateCommand(); m2.CommandText = "ALTER TABLE Logs ADD COLUMN Volume TEXT DEFAULT 'Normal'"; m2.ExecuteNonQuery(); } catch { }
                 try { using var m3 = db.CreateCommand(); m3.CommandText = "ALTER TABLE Logs ADD COLUMN HeatFlag INTEGER DEFAULT 0"; m3.ExecuteNonQuery(); } catch { }
                 try { using var m4 = db.CreateCommand(); m4.CommandText = "ALTER TABLE Logs ADD COLUMN ZincFlag INTEGER DEFAULT 0"; m4.ExecuteNonQuery(); } catch { }
                 try { using var m5 = db.CreateCommand(); m5.CommandText = "ALTER TABLE Logs ADD COLUMN MacaFlag INTEGER DEFAULT 0"; m5.ExecuteNonQuery(); } catch { }
-                
                 try { using var m6 = db.CreateCommand(); m6.CommandText = "ALTER TABLE Logs ADD COLUMN Concentration INTEGER"; m6.ExecuteNonQuery(); } catch { }
                 try { using var m7 = db.CreateCommand(); m7.CommandText = "ALTER TABLE Logs ADD COLUMN Motility INTEGER"; m7.ExecuteNonQuery(); } catch { }
                 try { using var m8 = db.CreateCommand(); m8.CommandText = "ALTER TABLE Logs ADD COLUMN Morphology INTEGER"; m8.ExecuteNonQuery(); } catch { }
                 try { using var m9 = db.CreateCommand(); m9.CommandText = "ALTER TABLE Logs ADD COLUMN LabReportBlob BLOB"; m9.ExecuteNonQuery(); } catch { }
                 try { using var m10 = db.CreateCommand(); m10.CommandText = "ALTER TABLE Logs ADD COLUMN LabReportFileName TEXT"; m10.ExecuteNonQuery(); } catch { }
-                
                 try { using var m11 = db.CreateCommand(); m11.CommandText = "ALTER TABLE Logs ADD COLUMN ClinicalVol REAL"; m11.ExecuteNonQuery(); } catch { }
                 try { using var m12 = db.CreateCommand(); m12.CommandText = "ALTER TABLE Logs ADD COLUMN ProgMotility INTEGER"; m12.ExecuteNonQuery(); } catch { }
                 try { using var m13 = db.CreateCommand(); m13.CommandText = "ALTER TABLE Logs ADD COLUMN PhLevel REAL"; m13.ExecuteNonQuery(); } catch { }
+                
+                // NEW: JSON Supplements Column 
+                try { using var m14 = db.CreateCommand(); m14.CommandText = "ALTER TABLE Logs ADD COLUMN Supplements TEXT DEFAULT '{}'"; m14.ExecuteNonQuery(); } catch { }
             }
             catch (Exception ex)
             {
@@ -397,21 +403,20 @@ namespace WankPlanner
             }
         }
 
-        static void LogEvent(SqliteConnection db, long timestamp, string mode, string volume, int heatFlag, int zincFlag, int macaFlag, 
+        static void LogEvent(SqliteConnection db, long timestamp, string mode, string volume, int heatFlag, string supplements, 
             int conc = 0, int motility = 0, int morphology = 0, double clinicalVol = 0.0, int progMot = 0, double phLevel = 0.0, 
             string? fileName = null, byte[]? blob = null)
         {
             using var cmd = db.CreateCommand();
             cmd.CommandText = @"
-                INSERT INTO Logs (Timestamp, Mode, Volume, HeatFlag, ZincFlag, MacaFlag, Concentration, Motility, Morphology, ClinicalVol, ProgMotility, PhLevel, LabReportFileName, LabReportBlob) 
-                VALUES ($ts, $mode, $vol, $heat, $zinc, $maca, $conc, $mot, $morph, $cvol, $pmot, $ph, $fname, $blob)";
+                INSERT INTO Logs (Timestamp, Mode, Volume, HeatFlag, Supplements, Concentration, Motility, Morphology, ClinicalVol, ProgMotility, PhLevel, LabReportFileName, LabReportBlob) 
+                VALUES ($ts, $mode, $vol, $heat, $supps, $conc, $mot, $morph, $cvol, $pmot, $ph, $fname, $blob)";
             
             cmd.Parameters.AddWithValue("$ts", timestamp);
             cmd.Parameters.AddWithValue("$mode", mode);
             cmd.Parameters.AddWithValue("$vol", volume);
             cmd.Parameters.AddWithValue("$heat", heatFlag);
-            cmd.Parameters.AddWithValue("$zinc", zincFlag);
-            cmd.Parameters.AddWithValue("$maca", macaFlag);
+            cmd.Parameters.AddWithValue("$supps", supplements);
             cmd.Parameters.AddWithValue("$conc", conc);
             cmd.Parameters.AddWithValue("$mot", motility);
             cmd.Parameters.AddWithValue("$morph", morphology);
@@ -513,7 +518,7 @@ namespace WankPlanner
         static void SendState(PhotinoWindow window, SqliteConnection db)
         {
             using var cmdLogs = db.CreateCommand();
-            cmdLogs.CommandText = "SELECT Id, Timestamp, IFNULL(Mode, 'Maintenance'), IFNULL(Volume, 'Normal'), IFNULL(HeatFlag, 0), IFNULL(ZincFlag, 0), IFNULL(MacaFlag, 0), IFNULL(Concentration, 0), IFNULL(Motility, 0), IFNULL(Morphology, 0), LabReportFileName, IFNULL(ClinicalVol, 0), IFNULL(ProgMotility, 0), IFNULL(PhLevel, 0) FROM Logs ORDER BY Timestamp DESC";
+            cmdLogs.CommandText = "SELECT Id, Timestamp, IFNULL(Mode, 'Maintenance'), IFNULL(Volume, 'Normal'), IFNULL(HeatFlag, 0), IFNULL(Supplements, '{}'), IFNULL(Concentration, 0), IFNULL(Motility, 0), IFNULL(Morphology, 0), LabReportFileName, IFNULL(ClinicalVol, 0.0), IFNULL(ProgMotility, 0), IFNULL(PhLevel, 0.0) FROM Logs ORDER BY Timestamp DESC";
             using var reader = cmdLogs.ExecuteReader();
             
             var logs = new List<object>();
@@ -524,16 +529,15 @@ namespace WankPlanner
                     timestamp = reader.GetInt64(1),
                     mode = reader.GetString(2),
                     volume = reader.GetString(3),
-                    heatFlag = reader.GetInt32(4),
-                    zincFlag = reader.GetInt32(5),
-                    macaFlag = reader.GetInt32(6),
-                    concentration = reader.GetInt32(7),
-                    motility = reader.GetInt32(8),
-                    morphology = reader.GetInt32(9),
-                    hasPdf = !reader.IsDBNull(10),
-                    clinicalVol = reader.GetDouble(11),
-                    progMotility = reader.GetInt32(12),
-                    phLevel = reader.GetDouble(13)
+                    heatFlag = Convert.ToInt32(reader.GetValue(4)),
+                    supplements = reader.GetString(5),
+                    concentration = Convert.ToInt32(reader.GetValue(6)),
+                    motility = Convert.ToInt32(reader.GetValue(7)),
+                    morphology = Convert.ToInt32(reader.GetValue(8)),
+                    hasPdf = !reader.IsDBNull(9),
+                    clinicalVol = Convert.ToDouble(reader.GetValue(10)),
+                    progMotility = Convert.ToInt32(reader.GetValue(11)),
+                    phLevel = Convert.ToDouble(reader.GetValue(12))
                 });
             }
 
@@ -589,14 +593,26 @@ namespace WankPlanner
             long ninetyDaysAgo = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - (90L * 24 * 3600);
             
             using var cmd = db.CreateCommand();
-            cmd.CommandText = "SELECT Timestamp, IFNULL(Volume, 'Normal'), IFNULL(HeatFlag, 0), IFNULL(Motility, 0), IFNULL(Concentration, 0), IFNULL(Morphology, 0), Mode, IFNULL(ZincFlag, 0), IFNULL(MacaFlag, 0), IFNULL(ClinicalVol, 0), IFNULL(ProgMotility, 0), IFNULL(PhLevel, 0) FROM Logs WHERE Timestamp >= $ts ORDER BY Timestamp ASC";
+            cmd.CommandText = "SELECT Timestamp, IFNULL(Volume, 'Normal'), IFNULL(HeatFlag, 0), IFNULL(Motility, 0), IFNULL(Concentration, 0), IFNULL(Morphology, 0), IFNULL(Mode, 'Maintenance'), IFNULL(Supplements, '{}'), IFNULL(ClinicalVol, 0.0), IFNULL(ProgMotility, 0), IFNULL(PhLevel, 0.0) FROM Logs WHERE Timestamp >= $ts ORDER BY Timestamp ASC";
             cmd.Parameters.AddWithValue("$ts", ninetyDaysAgo);
             
             using var reader = cmd.ExecuteReader();
-            var logs = new List<(long ts, string vol, int heat, int mot, int conc, int morph, string mode, int zinc, int maca, double cvol, int pmot, double ph)>();
+            var logs = new List<(long ts, string vol, int heat, int mot, int conc, int morph, string mode, string supplements, double cvol, int pmot, double ph)>();
             while(reader.Read())
             {
-                logs.Add((reader.GetInt64(0), reader.GetString(1), reader.GetInt32(2), reader.GetInt32(3), reader.GetInt32(4), reader.GetInt32(5), reader.GetString(6), reader.GetInt32(7), reader.GetInt32(8), reader.GetDouble(9), reader.GetInt32(10), reader.GetDouble(11)));
+                logs.Add((
+                    reader.GetInt64(0), 
+                    reader.GetString(1), 
+                    Convert.ToInt32(reader.GetValue(2)), 
+                    Convert.ToInt32(reader.GetValue(3)), 
+                    Convert.ToInt32(reader.GetValue(4)), 
+                    Convert.ToInt32(reader.GetValue(5)), 
+                    reader.GetString(6), 
+                    reader.GetString(7), 
+                    Convert.ToDouble(reader.GetValue(8)), 
+                    Convert.ToInt32(reader.GetValue(9)), 
+                    Convert.ToDouble(reader.GetValue(10))
+                ));
             }
 
             var releaseLogs = logs.Where(l => l.vol != "None" && l.vol != "N/A").ToList();
@@ -617,6 +633,13 @@ namespace WankPlanner
             if (minGap == 999) minGap = 0;
 
             string pdfPath = Path.Combine(dbDir, "Baseline_Summary.pdf");
+            
+            // CROSS-PLATFORM FONT SELECTION
+            string pdfFont = Fonts.Arial;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) 
+                pdfFont = "Liberation Sans"; // Metric-compatible Arial clone installed on your Nobara system
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) 
+                pdfFont = "Helvetica";
 
             var document = Document.Create(container =>
             {
@@ -625,7 +648,9 @@ namespace WankPlanner
                     page.Size(PageSizes.A4);
                     page.Margin(1.5f, Unit.Centimetre);
                     page.PageColor(Colors.White);
-                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.Arial));
+                    
+                    // USING OS-AWARE FONT
+                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily(pdfFont));
 
                     page.Header().Row(row =>
                     {
@@ -660,7 +685,7 @@ namespace WankPlanner
                             });
                         });
 
-                        // 2. VECTOR PDF GRAPHS (Newly Added)
+                        // 2. VECTOR PDF GRAPHS
                         if (logs.Count > 0)
                         {
                             Action<ColumnDescriptor, string, int, int, string> drawBar = (c, label, value, maxVal, color) => {
@@ -759,10 +784,23 @@ namespace WankPlanner
 
                                     var date = DateTimeOffset.FromUnixTimeSeconds(log.ts).ToLocalTime().ToString("MMM dd HH:mm");
                                     
+                                    int zincVal = 0, macaVal = 0, vitDVal = 0, vitCVal = 0;
+                                    try 
+                                    {
+                                        var sDoc = JsonDocument.Parse(log.supplements);
+                                        if (sDoc.RootElement.TryGetProperty("zinc", out var zProp)) zincVal = zProp.GetInt32();
+                                        if (sDoc.RootElement.TryGetProperty("maca", out var mProp)) macaVal = mProp.GetInt32();
+                                        if (sDoc.RootElement.TryGetProperty("vitD", out var dProp)) vitDVal = dProp.GetInt32();
+                                        if (sDoc.RootElement.TryGetProperty("vitC", out var cProp)) vitCVal = cProp.GetInt32();
+                                    } 
+                                    catch {}
+
                                     List<string> flags = new List<string>();
                                     if (log.heat == 1) flags.Add("Heat");
-                                    if (log.zinc == 1) flags.Add("Zinc");
-                                    if (log.maca == 1) flags.Add("Maca");
+                                    if (zincVal == 1) flags.Add("Zinc");
+                                    if (macaVal == 1) flags.Add("Maca");
+                                    if (vitDVal == 1) flags.Add("Vit D3");
+                                    if (vitCVal == 1) flags.Add("Vit C");
                                     string flagStr = flags.Count > 0 ? string.Join(", ", flags) : "-";
 
                                     string labStr = "-";

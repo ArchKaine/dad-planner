@@ -210,7 +210,7 @@
             display: flex; 
             align-items: center; 
             flex-wrap: wrap; 
-            gap: 15px; 
+            gap: 10px; 
             background: #252526; 
             padding: 10px; 
             border-radius: 6px; 
@@ -271,6 +271,10 @@
             color: #aaa; 
         }
 
+        .log-row { cursor: pointer; transition: background-color 0.15s ease; }
+        .log-row:hover { background-color: #2a2a2a; }
+        .selected-log-row { background-color: #004d40 !important; border-left: 3px solid #00bfa5; }
+
         .badge { padding: 3px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; color: #fff; }
         .bg-maint { background-color: #007acc; } 
         .bg-play { background-color: #9c27b0; } 
@@ -308,6 +312,13 @@
         .modal-section { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #333; }
         .modal-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
         
+        /* HELP MODAL SPECIFIC */
+        #helpModal { width: 700px; max-height: 85vh; overflow-y: auto; }
+        .help-h3 { color: #007acc; margin-top: 20px; margin-bottom: 8px; font-size: 1.1rem; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        .help-p { font-size: 0.9rem; line-height: 1.5; color: #ccc; margin-bottom: 10px; }
+        .help-li { font-size: 0.9rem; line-height: 1.5; color: #ccc; margin-bottom: 6px; margin-left: 20px; }
+        .help-code { background: #2d2d2d; padding: 2px 5px; border-radius: 3px; font-family: monospace; color: #ff9800; }
+
         ::-webkit-scrollbar { width: 8px; height: 8px; } 
         ::-webkit-scrollbar-track { background: #1e1e1e; }
         ::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; } 
@@ -327,6 +338,7 @@
         <div class="header-row">
             <h1 style="margin: 0;">System Maintenance Utility</h1>
             <div>
+                <button class="btn-icon" onclick="document.getElementById('helpModal').showModal()" style="margin-right: 5px; background-color: #1e262b; border: 1px solid #546e7a;">❓ Help</button>
                 <button class="btn-icon" onclick="generatePdf()" style="margin-right: 5px; background-color: #546e7a;">📄 90-Day Report</button>
                 <button class="btn-icon" onclick="document.getElementById('manualLogModal').showModal()" style="margin-right: 5px;">➕ Add Past Log</button>
                 <button class="btn-icon" onclick="document.getElementById('settingsModal').showModal()">⚙️ Settings</button>
@@ -394,6 +406,7 @@
             <div class="right-pane">
                 <div class="log-controls">
                     <h3 class="card-title" style="border:none; margin:0; padding:0;">Log New Event</h3>
+                    
                     <div class="mod-group">
                         <select id="modHeat" style="font-size: 0.85rem; width: 140px;">
                             <option value="0" selected>Temp: Normal</option>
@@ -401,12 +414,6 @@
                             <option value="2">Temp: Mod (Fever/Tub)</option>
                             <option value="3">Temp: Severe (>101°F)</option>
                         </select>
-                        <label style="display:flex; align-items:center; gap:5px; font-size: 0.85rem;">
-                            <input type="checkbox" id="modZinc"> 💊 Zinc
-                        </label>
-                        <label style="display:flex; align-items:center; gap:5px; font-size: 0.85rem;">
-                            <input type="checkbox" id="modMaca"> 🌿 Maca
-                        </label>
                         <div style="flex:1; display:flex; justify-content: flex-end; align-items:center; gap: 8px;">
                             <span style="font-size: 0.85rem; color:#888;">Vol:</span>
                             <select id="modVolume" style="width: 120px; font-size: 0.85rem;">
@@ -416,6 +423,22 @@
                                 <option value="High">High</option>
                             </select>
                         </div>
+                    </div>
+                    
+                    <div class="mod-group" style="padding: 6px 10px; background: #1e1e1e;">
+                        <span style="font-size: 0.75rem; color: #888; font-weight: bold; margin-right: 5px;">SUPPLEMENTS:</span>
+                        <label style="display:flex; align-items:center; gap:3px; font-size: 0.8rem;">
+                            <input type="checkbox" id="modZinc"> 💊 Zinc
+                        </label>
+                        <label style="display:flex; align-items:center; gap:3px; font-size: 0.8rem;">
+                            <input type="checkbox" id="modMaca"> 🌿 Maca
+                        </label>
+                        <label style="display:flex; align-items:center; gap:3px; font-size: 0.8rem;">
+                            <input type="checkbox" id="modVitD"> ☀️ D3
+                        </label>
+                        <label style="display:flex; align-items:center; gap:3px; font-size: 0.8rem;">
+                            <input type="checkbox" id="modVitC"> 🍊 C
+                        </label>
                     </div>
 
                     <div class="clinical-group">
@@ -459,7 +482,35 @@
         </main>
     </div>
 
-    <!-- SETTINGS MODAL -->
+    <dialog id="helpModal">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #555; padding-bottom: 10px;">
+            <h2 style="margin: 0;">PIMS User Manual</h2>
+            <button class="btn-icon" style="background: transparent; padding: 0;" onclick="document.getElementById('helpModal').close()">❌</button>
+        </div>
+        
+        <h3 class="help-h3">Operating Modes</h3>
+        <p class="help-p">The system classifies biological events into four distinct operational modes to maintain accurate statistical tracking:</p>
+        <li class="help-li"><strong>Maintenance:</strong> Standard self-regulated cycle clearing. Used to establish baseline recovery metrics and enforce system turnover.</li>
+        <li class="help-li"><strong>Playtime:</strong> Recreational relational events without reproductive intent. Tracked for system strain analysis but excluded from strict yield optimization.</li>
+        <li class="help-li"><strong>Baby-Making:</strong> Active reproductive attempts. The system auto-estimates volume based on historical recovery gap and saturation metrics.</li>
+        <li class="help-li"><strong>Clinical-Lab:</strong> Ground-truth baseline data. Used to record lab analytics (Concentration, Motility) to verify system integrity and clear Thermal Shadows.</li>
+
+        <h3 class="help-h3">Thermal Shadows</h3>
+        <p class="help-p">Spermatogenesis operates on a 74-day biological cycle. Severe thermal exposure (fevers, hot tubs, saunas) critically degrades system integrity during this window.</p>
+        <li class="help-li">Logging a Heat Event (Level 2 or 3) instantly triggers a <strong>Thermal Shadow</strong> warning that persists for exactly 74 days.</li>
+        <li class="help-li">Clinical Baseline testing is highly discouraged during a shadow, as the data will be artificially depressed and inaccurate.</li>
+        <li class="help-li">A shadow can be <strong>overridden</strong> early if a Clinical Baseline test is logged with passing metrics (≥15 M/mL Conc and ≥40% Motility) after the heat event occurred.</li>
+
+        <h3 class="help-h3">Biological Saturation Index</h3>
+        <p class="help-p">Supplements like Zinc, Maca, and Vitamins D/C do not provide instantaneous benefits. The system tracks <strong>Saturation</strong> over rolling time windows.</p>
+        <li class="help-li">A supplement is considered "Saturated" if it was logged during at least 50% of the events within its specific biological buildup window (e.g., 21 days for Zinc, 30 days for D3).</li>
+        <li class="help-li">The <strong>Analyze Supps</strong> tool in Settings calculates the exact yield and recovery time differences between Saturated and Un-Saturated system states.</li>
+
+        <h3 class="help-h3">Stealth Mode (Panic Key)</h3>
+        <p class="help-p">To instantly obfuscate all sensitive biological data, charts, and table logs from screen-lookers:</p>
+        <li class="help-li">Press <span class="help-code">Escape</span> to blur the UI. Press it again to clear.</li>
+    </dialog>
+
     <dialog id="settingsModal">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <h2>Configuration & Analytics</h2>
@@ -500,7 +551,6 @@
         </div>
     </dialog>
 
-    <!-- MANUAL LOG MODAL -->
     <dialog id="manualLogModal">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <h2>Add Retroactive Log</h2>
@@ -529,7 +579,8 @@
                     <option value="High">High</option>
                 </select>
             </div>
-            <div style="display: flex; gap: 15px; background: #1a1a1a; padding: 10px; border-radius: 4px; border: 1px solid #333; align-items: center;">
+            
+            <div style="display: flex; flex-wrap: wrap; gap: 15px; background: #1a1a1a; padding: 10px; border-radius: 4px; border: 1px solid #333; align-items: center;">
                 <select id="manualHeat" style="font-size: 0.8rem; width: 140px;">
                     <option value="0" selected>Temp: Normal</option>
                     <option value="1">Temp: Mild (Local)</option>
@@ -538,7 +589,10 @@
                 </select>
                 <label><input type="checkbox" id="manualZinc"> Zinc</label>
                 <label><input type="checkbox" id="manualMaca"> Maca</label>
+                <label><input type="checkbox" id="manualVitD"> ☀️ D3</label>
+                <label><input type="checkbox" id="manualVitC"> 🍊 C</label>
             </div>
+
             <div id="manualClinicalFields" style="display: none; flex-direction: column; gap: 10px; padding-top: 5px; border-top: 1px dashed #444;">
                 <label style="color:#90a4ae; font-size: 0.8rem; font-weight:bold;">CLINICAL LAB DATA (OPTIONAL)</label>
                 <div class="clinical-grid">
@@ -567,6 +621,8 @@
         let labFileName = null;
         let manualLabFileDataBase64 = null; 
         let manualLabFileName = null;
+
+        let logIdToChartIndexMap = {}; 
 
         document.getElementById('labFile').addEventListener('change', function(e) {
             const file = e.target.files[0];
@@ -602,28 +658,33 @@
         function generatePdf() { sendAction('GENERATE_PDF'); }
 
         // --- BIOLOGICAL SATURATION INDEX ---
-        function getSupplementSaturation(logs, targetTs, flagProp, daysBack) {
+        function getSupplementSaturation(logs, targetTs, supplementKey, daysBack) {
             const windowStart = targetTs - (daysBack * 24 * 3600);
             const windowLogs = logs.filter(l => l.timestamp >= windowStart && l.timestamp <= targetTs);
             if (windowLogs.length === 0) return false;
-            const activeCount = windowLogs.filter(l => l[flagProp] === 1).length;
+            
+            let activeCount = 0;
+            windowLogs.forEach(l => {
+                try {
+                    const supps = JSON.parse(l.supplements || "{}");
+                    if (supps[supplementKey] === 1) activeCount++;
+                } catch (e) {}
+            });
+            
             return (activeCount / windowLogs.length) >= 0.5; 
         }
 
-        // --- THERMAL SHADOW CALCULATOR (WITH CLINICAL OVERRIDE) ---
+        // --- THERMAL SHADOW CALCULATOR ---
         function calculateThermalShadow(logs, targetTs) {
             const biologicalCycleSeconds = 74 * 24 * 3600;
             const shadowWindow = targetTs - biologicalCycleSeconds;
             
-            // 1. Find severe heat events (Level 2 or 3) within the 74-day window
             const severeEvents = logs.filter(l => l.timestamp >= shadowWindow && l.timestamp <= targetTs && l.heatFlag >= 2);
             
             if (severeEvents.length > 0) {
-                // Get the most recent severe heat event
                 severeEvents.sort((a, b) => b.timestamp - a.timestamp);
                 const latestHeatEvent = severeEvents[0];
                 
-                // 2. CLINICAL OVERRIDE: Check for ground-truth lab data recorded AFTER the heat event
                 const subsequentLabs = logs.filter(l => 
                     l.mode === 'Clinical-Lab' && 
                     l.timestamp > latestHeatEvent.timestamp && 
@@ -632,14 +693,11 @@
 
                 for (let i = 0; i < subsequentLabs.length; i++) {
                     const lab = subsequentLabs[i];
-                    // WHO Baseline Thresholds: Concentration >= 15 M/mL AND Motility >= 40%
                     if (lab.concentration >= 15 && lab.motility >= 40) {
-                        // Ground truth proves the system is healthy. Shadow is negated.
                         return { isCompromised: false, overriddenBy: lab.id };
                     }
                 }
 
-                // 3. No override found. Shadow remains active.
                 const clearanceDate = latestHeatEvent.timestamp + biologicalCycleSeconds;
                 return { isCompromised: true, severity: latestHeatEvent.heatFlag, clearsAt: clearanceDate };
             }
@@ -679,6 +737,14 @@
                     }
 
                     globalLogs = data.logs || [];
+                    
+                    try { 
+                        updateChart(globalLogs); 
+                    } catch (chartErr) { 
+                        console.error(chartErr);
+                        document.getElementById('chartCanvas').innerHTML = `<div style="padding:15px; color:#ff5252;">Chart Error: ${chartErr.message}. Verify internet connection for ApexCharts CDN.</div>`;
+                    }
+
                     const list = document.getElementById('logList'); 
                     list.innerHTML = '';
                     
@@ -695,29 +761,33 @@
                         else if (log.mode === 'Baby-Making') badgeClass = 'bg-baby'; 
                         else if (log.mode === 'Clinical-Lab') badgeClass = 'bg-clinical';
 
+                        let supps = {};
+                        try { supps = JSON.parse(log.supplements || "{}"); } catch(e){}
+
                         let metricsStr = `Vol:${log.volume}`;
                         if (log.heatFlag > 0) metricsStr += ` <span style="color:#ff5252;" title="Heat Level ${log.heatFlag}">🌡️L${log.heatFlag}</span>`;
-                        if (log.zincFlag === 1) metricsStr += ' <span style="color:#aaa;" title="Zinc Supplement">💊</span>';
-                        if (log.macaFlag === 1) metricsStr += ' <span style="color:#aaa;" title="Maca Root">🌿</span>';
+                        if (supps.zinc === 1) metricsStr += ' <span style="color:#aaa;" title="Zinc Supplement">💊</span>';
+                        if (supps.maca === 1) metricsStr += ' <span style="color:#aaa;" title="Maca Root">🌿</span>';
+                        if (supps.vitD === 1) metricsStr += ' <span style="color:#aaa;" title="Vitamin D3">☀️</span>';
+                        if (supps.vitC === 1) metricsStr += ' <span style="color:#aaa;" title="Vitamin C">🍊</span>';
 
-                        let pdfBtn = log.hasPdf ? `<button style="background:#546e7a; padding:4px 6px; font-size:0.7rem; color:#fff; border:none; border-radius:3px; cursor:pointer;" onclick="sendAction('OPEN_LAB_REPORT', {id: ${log.id}})">PDF</button>` : '';
-
+                        let pdfBtn = log.hasPdf ? `<button style="background:#546e7a; padding:4px 6px; font-size:0.7rem; color:#fff; border:none; border-radius:3px; cursor:pointer;" onclick="event.stopPropagation(); sendAction('OPEN_LAB_REPORT', {id: ${log.id}})">PDF</button>` : '';
+                        
                         list.innerHTML += `
-                            <tr id="log-row-${log.id}">
+                            <tr id="log-row-${log.id}" class="log-row" onclick="handleRowClick(${log.id})">
                                 <td style="white-space: nowrap;">${dateStr}</td>
                                 <td><span class="badge ${badgeClass}">${log.mode}</span></td>
                                 <td style="font-size: 0.85rem; color: #ccc;">${metricsStr}</td>
                                 <td>
                                     <div style="display: flex; gap: 4px;">
                                         ${pdfBtn}
-                                        <button style="background:#f57c00; padding:4px 6px; font-size:0.7rem; color:#fff; border:none; border-radius:3px; cursor:pointer;" onclick="editLog(${log.id})">EDIT</button>
-                                        <button style="background:#d32f2f; padding:4px 6px; font-size:0.7rem; color:#fff; border:none; border-radius:3px; cursor:pointer;" onclick="if(confirm('Permanently purge this record?')) deleteLog(${log.id})">PURGE</button>
+                                        <button style="background:#f57c00; padding:4px 6px; font-size:0.7rem; color:#fff; border:none; border-radius:3px; cursor:pointer;" onclick="event.stopPropagation(); editLog(${log.id})">EDIT</button>
+                                        <button style="background:#d32f2f; padding:4px 6px; font-size:0.7rem; color:#fff; border:none; border-radius:3px; cursor:pointer;" onclick="event.stopPropagation(); if(confirm('Permanently purge this record?')) deleteLog(${log.id})">PURGE</button>
                                     </div>
                                 </td>
                             </tr>`;
                     });
 
-                    // Thermal Shadow UI Checks
                     const currentShadow = calculateThermalShadow(globalLogs, now);
                     const thermBanner = document.getElementById('thermalBanner');
                     const clinBtn = document.getElementById('btnClinicalLog');
@@ -736,14 +806,6 @@
 
                     updateTelemetry(globalLogs, now, minH, maxH);
                     updateHeatmap(globalLogs);
-                    
-                    try { 
-                        updateChart(globalLogs); 
-                    } catch (chartErr) { 
-                        console.error(chartErr);
-                        document.getElementById('chartCanvas').innerHTML = `<div style="padding:15px; color:#ff5252;">Chart Error: ${chartErr.message}. Verify internet connection for ApexCharts CDN.</div>`;
-                    }
-                    
                     updateBlackoutBanner(data.appointment, now);
                 }
             } catch (superErr) {
@@ -755,6 +817,26 @@
             sendAction('GET_STATE'); 
             setInterval(() => { sendAction('GET_STATE'); }, 60000); 
         };
+
+        function handleRowClick(logId) {
+            document.querySelectorAll('.log-row').forEach(r => r.classList.remove('selected-log-row'));
+            const row = document.getElementById(`log-row-${logId}`);
+            if (row) row.classList.add('selected-log-row');
+
+            if (myChart && logIdToChartIndexMap[logId] !== undefined) {
+                const chartIndex = logIdToChartIndexMap[logId];
+                myChart.toggleDataPointSelection(0, chartIndex);
+            }
+        }
+
+        function highlightTableRowFromChart(dataPointIndex, logId) {
+            document.querySelectorAll('.log-row').forEach(r => r.classList.remove('selected-log-row'));
+            const targetRow = document.getElementById(`log-row-${logId}`);
+            if (targetRow) {
+                targetRow.classList.add('selected-log-row');
+                targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
 
         function estimateBabyMakingVolume(timestamp) {
             let priorRelease = null;
@@ -775,7 +857,7 @@
             if (gapHours < minH) estVol = 'Low'; 
             else if (gapHours >= maxH) estVol = 'High';
             
-            const isZincSaturated = getSupplementSaturation(globalLogs, timestamp, 'zincFlag', 21);
+            const isZincSaturated = getSupplementSaturation(globalLogs, timestamp, 'zinc', 21);
             if (isZincSaturated) { 
                 if (estVol === 'Low') estVol = 'Normal'; 
                 else if (estVol === 'Normal') estVol = 'High'; 
@@ -783,13 +865,24 @@
             return estVol;
         }
 
+        // Packages checkboxes into a JSON string
+        function buildSupplementJson(zincId, macaId, vitDId, vitCId) {
+            const supps = {
+                zinc: document.getElementById(zincId).checked ? 1 : 0,
+                maca: document.getElementById(macaId).checked ? 1 : 0,
+                vitD: document.getElementById(vitDId).checked ? 1 : 0,
+                vitC: document.getElementById(vitCId).checked ? 1 : 0
+            };
+            return JSON.stringify(supps);
+        }
+
         function logEvent(mode) { 
             let vol = document.getElementById('modVolume').value; 
             const now = Math.floor(Date.now() / 1000);
             
             let heat = parseInt(document.getElementById('modHeat').value) || 0; 
-            let zinc = document.getElementById('modZinc').checked ? 1 : 0; 
-            let maca = document.getElementById('modMaca').checked ? 1 : 0;
+            
+            const supplementsJson = buildSupplementJson('modZinc', 'modMaca', 'modVitD', 'modVitC');
             
             let cvol = parseFloat(document.getElementById('modClinicalVol').value) || 0.0; 
             let conc = parseInt(document.getElementById('modConcentration').value) || 0; 
@@ -808,7 +901,8 @@
             if (mode === 'Baby-Making') vol = estimateBabyMakingVolume(now);
             
             sendAction('LOG_EVENT', { 
-                mode: mode, volume: vol, heatFlag: heat, zincFlag: zinc, macaFlag: maca, 
+                mode: mode, volume: vol, heatFlag: heat, 
+                supplements: supplementsJson,
                 clinicalVol: cvol, concentration: conc, motility: mot, progMotility: pmot, 
                 morphology: morph, phLevel: ph, labFileName: labFileName, labFileData: labFileDataBase64 
             }); 
@@ -854,8 +948,13 @@
             let h2 = log.heatFlag === 2 ? 'selected' : '';
             let h3 = log.heatFlag === 3 ? 'selected' : '';
 
-            let zChk = log.zincFlag === 1 ? 'checked' : ''; 
-            let mChk = log.macaFlag === 1 ? 'checked' : '';
+            let supps = {};
+            try { supps = JSON.parse(log.supplements || "{}"); } catch(e){}
+
+            let zChk = supps.zinc === 1 ? 'checked' : ''; 
+            let mChk = supps.maca === 1 ? 'checked' : '';
+            let dChk = supps.vitD === 1 ? 'checked' : '';
+            let cChk = supps.vitC === 1 ? 'checked' : '';
 
             tr.innerHTML = `
                 <td colspan="4" style="padding: 10px; background: #222;">
@@ -869,7 +968,7 @@
                                 <option value="Clinical-Lab" ${labSel}>Clinical</option>
                             </select>
                         </div>
-                        <div style="display:flex; gap:10px; align-items:center;">
+                        <div style="display:flex; flex-wrap: wrap; gap:10px; align-items:center;">
                             <select id="edit-vol-${id}" style="width:100px; font-size:0.8rem;">
                                 <option value="None" ${vNoneSel}>Dry</option>
                                 <option value="Low" ${vLowSel}>Low</option>
@@ -882,8 +981,10 @@
                                 <option value="2" ${h2}>Heat 2</option>
                                 <option value="3" ${h3}>Heat 3</option>
                             </select>
-                            <label style="font-size:0.75rem;"><input type="checkbox" id="edit-zinc-${id}" ${zChk}> 💊</label>
-                            <label style="font-size:0.75rem;"><input type="checkbox" id="edit-maca-${id}" ${mChk}> 🌿</label>
+                            <label style="font-size:0.75rem;"><input type="checkbox" id="edit-zinc-${id}" ${zChk}> 💊 Zinc</label>
+                            <label style="font-size:0.75rem;"><input type="checkbox" id="edit-maca-${id}" ${mChk}> 🌿 Maca</label>
+                            <label style="font-size:0.75rem;"><input type="checkbox" id="edit-vitD-${id}" ${dChk}> ☀️ D3</label>
+                            <label style="font-size:0.75rem;"><input type="checkbox" id="edit-vitC-${id}" ${cChk}> 🍊 C</label>
                         </div>
                         <div id="edit-clinical-fields-${id}" style="display:${displayClinical}; grid-template-columns:1fr 1fr 1fr; gap:5px; background:#1a1a1a; padding:5px; border-radius:4px;">
                             <input type="number" id="edit-cvol-${id}" value="${log.clinicalVol || ''}" step="0.1" style="font-size:0.75rem;" placeholder="Vol(mL)">
@@ -918,8 +1019,8 @@
             const mode = document.getElementById(`edit-mode-${id}`).value; 
             let vol = document.getElementById(`edit-vol-${id}`).value;
             let heat = parseInt(document.getElementById(`edit-heat-${id}`).value) || 0; 
-            let zinc = document.getElementById(`edit-zinc-${id}`).checked ? 1 : 0; 
-            let maca = document.getElementById(`edit-maca-${id}`).checked ? 1 : 0;
+            
+            const supplementsJson = buildSupplementJson(`edit-zinc-${id}`, `edit-maca-${id}`, `edit-vitD-${id}`, `edit-vitC-${id}`);
             
             let cvol = 0, conc = 0, mot = 0, pmot = 0, morph = 0, ph = 0;
             
@@ -941,16 +1042,18 @@
                 reader.onload = function(event) { 
                     const b64 = event.target.result.split(',')[1]; 
                     sendAction('UPDATE_LOG', { 
-                        id: id, timestamp: ts, mode: mode, volume: vol, heatFlag: heat, zincFlag: zinc, 
-                        macaFlag: maca, clinicalVol: cvol, concentration: conc, motility: mot, progMotility: pmot, 
+                        id: id, timestamp: ts, mode: mode, volume: vol, heatFlag: heat, 
+                        supplements: supplementsJson,
+                        clinicalVol: cvol, concentration: conc, motility: mot, progMotility: pmot, 
                         morphology: morph, phLevel: ph, labFileName: file.name, labFileData: b64 
                     }); 
                 }; 
                 reader.readAsDataURL(file); 
             } else { 
                 sendAction('UPDATE_LOG', { 
-                    id: id, timestamp: ts, mode: mode, volume: vol, heatFlag: heat, zincFlag: zinc, 
-                    macaFlag: maca, clinicalVol: cvol, concentration: conc, motility: mot, progMotility: pmot, 
+                    id: id, timestamp: ts, mode: mode, volume: vol, heatFlag: heat,
+                    supplements: supplementsJson,
+                    clinicalVol: cvol, concentration: conc, motility: mot, progMotility: pmot, 
                     morphology: morph, phLevel: ph 
                 }); 
             }
@@ -985,8 +1088,8 @@
             const mode = document.getElementById('manualMode').value; 
             let vol = document.getElementById('manualVolume').value;
             let heat = parseInt(document.getElementById('manualHeat').value) || 0; 
-            let zinc = document.getElementById('manualZinc').checked ? 1 : 0; 
-            let maca = document.getElementById('manualMaca').checked ? 1 : 0;
+            
+            const supplementsJson = buildSupplementJson('manualZinc', 'manualMaca', 'manualVitD', 'manualVitC');
             
             let cvol = parseFloat(document.getElementById('manualClinicalVol').value) || 0.0; 
             let conc = parseInt(document.getElementById('manualConc').value) || 0; 
@@ -999,7 +1102,8 @@
             if (mode === 'Baby-Making') vol = estimateBabyMakingVolume(ts);
             
             sendAction('MANUAL_LOG', { 
-                timestamp: ts, mode: mode, volume: vol, heatFlag: heat, zincFlag: zinc, macaFlag: maca, 
+                timestamp: ts, mode: mode, volume: vol, heatFlag: heat, 
+                supplements: supplementsJson,
                 clinicalVol: cvol, concentration: conc, motility: mot, progMotility: pmot, morphology: morph, 
                 phLevel: ph, labFileName: manualLabFileName, labFileData: manualLabFileDataBase64 
             });
@@ -1085,7 +1189,7 @@
             let releaseLogs = globalLogs.filter(l => l.volume !== 'None' && l.volume !== 'N/A').sort((a, b) => a.timestamp - b.timestamp); 
             
             let validReleaseLogs = [];
-            for(let i=0; i<releaseLogs.length; i++) {
+            for (let i = 0; i < releaseLogs.length; i++) {
                 const shadow = calculateThermalShadow(globalLogs, releaseLogs[i].timestamp);
                 if (!shadow.isCompromised) {
                     validReleaseLogs.push(releaseLogs[i]);
@@ -1098,48 +1202,83 @@
             }
 
             let zaTot=0, zaSuc=0, ziTot=0, ziSuc=0; 
+            let dTot=0, dSuc=0, diTot=0, diSuc=0;
             let mGaps=[], nmGaps=[];
+            let cGaps=[], ncGaps=[];
             
             for (let i = 1; i < validReleaseLogs.length; i++) {
                 const cur = validReleaseLogs[i]; 
                 const prev = validReleaseLogs[i - 1];
                 const gap = (cur.timestamp - prev.timestamp) / 3600;
                 
-                const isZincSaturated = getSupplementSaturation(globalLogs, cur.timestamp, 'zincFlag', 21);
-                const isMacaSaturated = getSupplementSaturation(globalLogs, cur.timestamp, 'macaFlag', 21);
+                const isZincSaturated = getSupplementSaturation(globalLogs, cur.timestamp, 'zinc', 21);
+                const isMacaSaturated = getSupplementSaturation(globalLogs, cur.timestamp, 'maca', 21);
+                const isVitDSaturated = getSupplementSaturation(globalLogs, cur.timestamp, 'vitD', 30);
+                const isVitCSaturated = getSupplementSaturation(globalLogs, cur.timestamp, 'vitC', 30);
                 
+                let isSuccess = (cur.volume === 'Normal' || cur.volume === 'High'); 
+
                 if (cur.mode === 'Maintenance' || cur.mode === 'Clinical-Lab') { 
-                    let isSuccess = (cur.volume === 'Normal' || cur.volume === 'High'); 
                     if (isZincSaturated) { zaTot++; if (isSuccess) zaSuc++; } 
                     else { ziTot++; if (isSuccess) ziSuc++; } 
+
+                    if (isVitDSaturated) { dTot++; if (isSuccess) dSuc++; }
+                    else { diTot++; if (isSuccess) diSuc++; }
                 }
                 
                 if (isMacaSaturated) mGaps.push(gap); 
                 else nmGaps.push(gap);
+
+                if (isVitCSaturated) cGaps.push(gap);
+                else ncGaps.push(gap);
             }
             
-            let msg = "💊 BIOLOGICAL SATURATION ANALYSIS 🌿\n\n";
-            msg += "(Measuring efficacy based on cumulative 21-day buildup)\n";
+            let msg = "💊 BIOLOGICAL SATURATION ANALYSIS 🌿☀️🍊\n\n";
+            msg += "(Measuring efficacy based on cumulative buildup windows)\n";
             msg += "(Thermal Shadow periods removed to prevent data corruption)\n\n";
 
+            // ZINC
             if (zaTot > 0 && ziTot > 0) { 
                 const zaPct = Math.round((zaSuc/zaTot)*100); 
                 const ziPct = Math.round((ziSuc/ziTot)*100); 
                 const diff = zaPct - ziPct; 
-                msg += `[ZINC - VOLUME YIELD]\nWithout Zinc Saturation: ${ziPct}% optimal yield rate.\nWith Zinc Saturation: ${zaPct}% optimal yield rate.\n`; 
-                msg += (diff > 0) ? `Result: Zinc buildup increases optimal yield probability by +${diff}%.\n\n` : `Result: Zinc buildup has no measurable positive effect on yield.\n\n`; 
+                msg += `[ZINC - YIELD RATE (21-Day Window)]\nUn-Saturated: ${ziPct}% | Saturated: ${zaPct}%\n`; 
+                msg += (diff > 0) ? `Result: +${diff}% optimal yield probability.\n\n` : `Result: No measurable yield impact.\n\n`; 
             } else { 
-                msg += `[ZINC] Insufficient saturated baseline data to compare.\n\n`; 
+                msg += `[ZINC] Insufficient baseline data.\n\n`; 
             }
-            
+
+            // MACA ROOT
             if (mGaps.length > 0 && nmGaps.length > 0) { 
                 const mAvg = mGaps.reduce((a,b)=>a+b,0) / mGaps.length; 
                 const nmAvg = nmGaps.reduce((a,b)=>a+b,0) / nmGaps.length; 
                 const diff = nmAvg - mAvg; 
-                msg += `[MACA ROOT - RECOVERY SPEED]\nWithout Maca Saturation: ${nmAvg.toFixed(1)} hours mean recovery.\nWith Maca Saturation: ${mAvg.toFixed(1)} hours mean recovery.\n`; 
-                msg += (diff > 0) ? `Result: Maca buildup accelerates recovery by ${diff.toFixed(1)} hours.\n` : `Result: Maca buildup has no measurable positive effect on recovery speed.\n`; 
+                msg += `[MACA ROOT - RECOVERY SPEED (21-Day Window)]\nUn-Saturated: ${nmAvg.toFixed(1)}h | Saturated: ${mAvg.toFixed(1)}h\n`; 
+                msg += (diff > 0) ? `Result: Recovery accelerated by ${diff.toFixed(1)} hours.\n\n` : `Result: No measurable speed impact.\n\n`; 
             } else { 
-                msg += `[MACA] Insufficient saturated baseline data to compare.\n`; 
+                msg += `[MACA] Insufficient baseline data.\n\n`; 
+            }
+
+            // VITAMIN D3
+            if (dTot > 0 && diTot > 0) { 
+                const dPct = Math.round((dSuc/dTot)*100); 
+                const diPct = Math.round((diSuc/diTot)*100); 
+                const diff = dPct - diPct; 
+                msg += `[VITAMIN D3 - YIELD RATE (30-Day Window)]\nUn-Saturated: ${diPct}% | Saturated: ${dPct}%\n`; 
+                msg += (diff > 0) ? `Result: +${diff}% optimal yield probability.\n\n` : `Result: No measurable yield impact.\n\n`; 
+            } else { 
+                msg += `[VITAMIN D3] Insufficient baseline data.\n\n`; 
+            }
+
+            // VITAMIN C
+            if (cGaps.length > 0 && ncGaps.length > 0) { 
+                const cAvg = cGaps.reduce((a,b)=>a+b,0) / cGaps.length; 
+                const ncAvg = ncGaps.reduce((a,b)=>a+b,0) / ncGaps.length; 
+                const diff = ncAvg - cAvg; 
+                msg += `[VITAMIN C - RECOVERY SPEED (30-Day Window)]\nUn-Saturated: ${ncAvg.toFixed(1)}h | Saturated: ${cAvg.toFixed(1)}h\n`; 
+                msg += (diff > 0) ? `Result: Recovery accelerated by ${diff.toFixed(1)} hours.\n` : `Result: No measurable speed impact.\n`; 
+            } else { 
+                msg += `[VITAMIN C] Insufficient baseline data.\n`; 
             }
             
             alert(msg);
@@ -1324,6 +1463,8 @@
             let maxTarget = parseFloat(document.getElementById('maxHours').value) || 72; 
             let minTarget = parseFloat(document.getElementById('minHours').value) || 24;
             
+            logIdToChartIndexMap = {};
+
             for (let i = 0; i < chronological.length; i++) { 
                 let current = chronological[i]; 
                 let gapHours = (i === 0) ? maxTarget : (current.timestamp - chronological[i - 1].timestamp) / 3600; 
@@ -1334,12 +1475,31 @@
                 
                 chartData.push({ x: current.timestamp * 1000, y: parseFloat(gapHours.toFixed(1)), logData: current, isInitialFaked: (i === 0) }); 
                 discreteMarkers.push({ seriesIndex: 0, dataPointIndex: i, fillColor: pColor, strokeColor: '#1e1e1e', size: 5 }); 
+                
+                logIdToChartIndexMap[current.id] = i; 
             }
             
             if (myChart) myChart.destroy(); 
             myChart = new ApexCharts(document.getElementById('chartCanvas'), {
                 series: [{ name: 'Recovery Gap', data: chartData }], 
-                chart: { type: 'area', height: '100%', width: '100%', foreColor: '#aaa', background: 'transparent', toolbar: { show: true }, animations: { enabled: false } }, 
+                chart: { 
+                    type: 'area', 
+                    height: '100%', 
+                    width: '100%', 
+                    foreColor: '#aaa', 
+                    background: 'transparent', 
+                    toolbar: { show: true }, 
+                    animations: { enabled: false },
+                    events: {
+                        dataPointSelection: function(event, chartContext, config) {
+                            const dataIndex = config.dataPointIndex;
+                            if (dataIndex !== undefined && chartData[dataIndex]) {
+                                const dbLogId = chartData[dataIndex].logData.id;
+                                highlightTableRowFromChart(dataIndex, dbLogId);
+                            }
+                        }
+                    }
+                }, 
                 colors: ['#555'], 
                 fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.3, opacityTo: 0.05, stops: [0, 100] } }, 
                 dataLabels: { enabled: false }, 
@@ -1357,20 +1517,29 @@
                         const log = item.logData; 
                         const dateStr = new Date(log.timestamp * 1000).toLocaleString();
                         
+                        let supps = {};
+                        try { supps = JSON.parse(log.supplements || "{}"); } catch(e){}
+
                         let lines = `<div><strong>Mode:</strong> ${log.mode}</div>`; 
                         lines += `<div><strong>${log.mode === 'Baby-Making' ? 'Est. ' : ''}Volume:</strong> ${log.volume}</div>`;
                         
-                        const isZincSat = getSupplementSaturation(logs, log.timestamp, 'zincFlag', 21);
-                        const isMacaSat = getSupplementSaturation(logs, log.timestamp, 'macaFlag', 21);
+                        const isZincSat = getSupplementSaturation(logs, log.timestamp, 'zinc', 21);
+                        const isMacaSat = getSupplementSaturation(logs, log.timestamp, 'maca', 21);
+                        const isVitDSat = getSupplementSaturation(logs, log.timestamp, 'vitD', 30);
+                        const isVitCSat = getSupplementSaturation(logs, log.timestamp, 'vitC', 30);
                         const currentShadow = calculateThermalShadow(logs, log.timestamp);
 
                         let flags = []; 
                         if (log.heatFlag > 0) flags.push(`⚠️ Temp L${log.heatFlag}`); 
                         if (currentShadow.isCompromised) flags.push(`<span style="color:#f57c00;">🔥 Shadow Active</span>`);
-                        if (log.zincFlag === 1) flags.push(`💊 Zinc Dose`); 
-                        if (isZincSat) flags.push(`🩸 Zinc Saturation`); 
-                        if (log.macaFlag === 1) flags.push(`🌿 Maca Dose`); 
-                        if (isMacaSat) flags.push(`🧬 Maca Saturation`); 
+                        if (supps.zinc === 1) flags.push(`💊 Zinc`); 
+                        if (isZincSat) flags.push(`🩸 Zn Sat`); 
+                        if (supps.maca === 1) flags.push(`🌿 Maca`); 
+                        if (isMacaSat) flags.push(`🧬 Ma Sat`); 
+                        if (supps.vitD === 1) flags.push(`☀️ D3`); 
+                        if (isVitDSat) flags.push(`🌞 D3 Sat`);
+                        if (supps.vitC === 1) flags.push(`🍊 C`); 
+                        if (isVitCSat) flags.push(`🍊 C Sat`);
                         
                         if (flags.length > 0) lines += `<hr style="border:0; border-top:1px solid #444; margin:5px 0;"><div>${flags.join(' | ')}</div>`;
                         

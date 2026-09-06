@@ -12,7 +12,7 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 
-namespace WankPlanner
+namespace DadPlanner
 {
     class Program
     {
@@ -344,7 +344,7 @@ namespace WankPlanner
                 }
                 catch (Exception ex)
                 {
-                    // Force the exact C# stack trace into the UI table so we can read it
+                    // Forcing the stack trace back into the UI so we can see Windows' native library error
                     var errorPayload = new { action = "SHOW_ERROR", message = ex.ToString() };
                     w.SendWebMessage(JsonSerializer.Serialize(errorPayload));
                     
@@ -379,7 +379,6 @@ namespace WankPlanner
                 ";
                 cmd.ExecuteNonQuery();
 
-                // Legacy Columns
                 try { using var m1 = db.CreateCommand(); m1.CommandText = "ALTER TABLE Logs ADD COLUMN Mode TEXT DEFAULT 'Maintenance'"; m1.ExecuteNonQuery(); } catch { }
                 try { using var m2 = db.CreateCommand(); m2.CommandText = "ALTER TABLE Logs ADD COLUMN Volume TEXT DEFAULT 'Normal'"; m2.ExecuteNonQuery(); } catch { }
                 try { using var m3 = db.CreateCommand(); m3.CommandText = "ALTER TABLE Logs ADD COLUMN HeatFlag INTEGER DEFAULT 0"; m3.ExecuteNonQuery(); } catch { }
@@ -393,8 +392,6 @@ namespace WankPlanner
                 try { using var m11 = db.CreateCommand(); m11.CommandText = "ALTER TABLE Logs ADD COLUMN ClinicalVol REAL"; m11.ExecuteNonQuery(); } catch { }
                 try { using var m12 = db.CreateCommand(); m12.CommandText = "ALTER TABLE Logs ADD COLUMN ProgMotility INTEGER"; m12.ExecuteNonQuery(); } catch { }
                 try { using var m13 = db.CreateCommand(); m13.CommandText = "ALTER TABLE Logs ADD COLUMN PhLevel REAL"; m13.ExecuteNonQuery(); } catch { }
-                
-                // NEW: JSON Supplements Column 
                 try { using var m14 = db.CreateCommand(); m14.CommandText = "ALTER TABLE Logs ADD COLUMN Supplements TEXT DEFAULT '{}'"; m14.ExecuteNonQuery(); } catch { }
             }
             catch (Exception ex)
@@ -634,10 +631,9 @@ namespace WankPlanner
 
             string pdfPath = Path.Combine(dbDir, "Baseline_Summary.pdf");
             
-            // CROSS-PLATFORM FONT SELECTION
             string pdfFont = Fonts.Arial;
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) 
-                pdfFont = "Liberation Sans"; // Metric-compatible Arial clone installed on your Nobara system
+                pdfFont = "Liberation Sans"; 
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) 
                 pdfFont = "Helvetica";
 
@@ -649,7 +645,6 @@ namespace WankPlanner
                     page.Margin(1.5f, Unit.Centimetre);
                     page.PageColor(Colors.White);
                     
-                    // USING OS-AWARE FONT
                     page.DefaultTextStyle(x => x.FontSize(10).FontFamily(pdfFont));
 
                     page.Header().Row(row =>

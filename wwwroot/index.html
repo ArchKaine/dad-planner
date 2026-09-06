@@ -5,42 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PIMS Dashboard</title>
     <style>
-        /* BASE DESKTOP RESET */
-        body {
+        body { 
             background-color: #121212; 
-            color: #e0e0e0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #e0e0e0; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             margin: 0; 
             padding: 0; 
-            height: 100vh;
-            width: 100vw;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
+            height: 100vh; 
+            width: 100vw; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
         }
-        
+
         h1, h2, h3 { 
             color: #ffffff; 
             margin-top: 0; 
         }
 
-        /* MASTER WRAPPER */
-        .app-wrapper {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            width: 100%;
-            padding: 15px 20px;
-            box-sizing: border-box;
+        .app-wrapper { 
+            display: flex; 
+            flex-direction: column; 
+            height: 100%; 
+            width: 100%; 
+            padding: 15px 20px; 
+            box-sizing: border-box; 
         }
 
-        /* HEADER */
-        .header-row {
-            flex: 0 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
+        .header-row { 
+            flex: 0 0 auto; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 15px; 
         }
 
         .btn-icon { 
@@ -50,12 +47,10 @@
             font-size: 0.9rem; 
             border-radius: 4px; 
             border: none; 
-            cursor: pointer;
+            cursor: pointer; 
         }
 
-        .btn-icon:hover { 
-            background-color: #555; 
-        }
+        .btn-icon:hover { background-color: #555; }
 
         .banner { 
             flex: 0 0 auto; 
@@ -66,43 +61,39 @@
             display: none; 
         }
 
-        .banner-danger { 
-            background-color: #d32f2f; 
-            color: #fff; 
-        }
+        .banner-danger { background-color: #d32f2f; color: #fff; }
+        .banner-warning { background-color: #f57c00; color: #fff; }
 
-        /* MAIN DASHBOARD GRID */
-        .main-grid {
-            flex: 1 1 auto;
-            display: grid;
-            grid-template-columns: 1.8fr 1.2fr;
-            gap: 20px;
+        .main-grid { 
+            flex: 1 1 auto; 
+            display: grid; 
+            grid-template-columns: 1.8fr 1.2fr; 
+            gap: 20px; 
             min-height: 0; 
         }
 
-        /* LEFT PANE: ANALYTICS */
-        .left-pane {
+        .left-pane { 
             display: flex; 
             flex-direction: column; 
-            gap: 15px;
+            gap: 15px; 
             min-height: 0; 
             overflow-y: auto; 
-            padding-right: 5px;
+            padding-right: 5px; 
         }
-
+        
         .hud-container { 
             display: flex; 
             gap: 10px; 
             flex: 0 0 auto; 
         }
 
-        .hud-box {
+        .hud-box { 
             flex: 1; 
             background-color: #1e1e1e; 
-            border: 1px solid #333;
+            border: 1px solid #333; 
             border-radius: 6px; 
             padding: 10px; 
-            text-align: center;
+            text-align: center; 
         }
 
         .hud-value { 
@@ -118,12 +109,11 @@
             text-transform: uppercase; 
             letter-spacing: 1px; 
         }
-
-        /* CHARTS */
-        .chart-card {
+        
+        .chart-card { 
             background-color: #1a1a1a; 
             border: 1px solid #333; 
-            border-radius: 6px;
+            border-radius: 6px; 
             padding: 10px 15px; 
             display: flex; 
             flex-direction: column; 
@@ -142,35 +132,71 @@
             min-height: 0; 
             width: 100%; 
         }
-        
-        .card-title {
+
+        .card-title { 
             font-size: 0.85rem; 
             color: #888; 
             text-transform: uppercase; 
-            letter-spacing: 1px;
+            letter-spacing: 1px; 
             margin-top: 0; 
             margin-bottom: 10px; 
             border-bottom: 1px solid #333; 
-            padding-bottom: 5px;
+            padding-bottom: 5px; 
         }
 
-        .secondary-charts-row {
+        .secondary-charts-row { 
             flex: 0 0 auto; 
-            display: grid;
+            display: grid; 
             grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); 
-            gap: 15px;
+            gap: 15px; 
+        }
+        
+        /* HEATMAP STYLES */
+        .heatmap-scroll { 
+            overflow-x: auto; 
+            overflow-y: hidden; 
+            padding-bottom: 5px; 
         }
 
-        /* RIGHT PANE: COMMAND & LOGS */
-        .right-pane {
+        .heatmap-grid { 
+            display: grid; 
+            grid-template-rows: repeat(7, 12px); 
+            grid-auto-flow: column; 
+            gap: 4px; 
+        }
+
+        .heatmap-cell { 
+            width: 12px; 
+            height: 12px; 
+            border-radius: 2px; 
+            box-sizing: border-box; 
+        }
+
+        .heatmap-cell.empty { background-color: transparent; border: none; }
+        .heatmap-cell.level-0 { background-color: #252526; border: 1px solid #333; }
+        .heatmap-cell.level-1 { background-color: #0a304e; }
+        .heatmap-cell.level-2 { background-color: #005999; }
+        .heatmap-cell.level-3 { background-color: #42a5f5; }
+
+        .heatmap-legend { 
+            display: flex; 
+            align-items: center; 
+            justify-content: flex-end; 
+            gap: 5px; 
+            margin-top: 10px; 
+            font-size: 0.75rem; 
+            color: #888; 
+        }
+        
+        .right-pane { 
             display: flex; 
             flex-direction: column; 
-            background-color: #1a1a1a;
+            background-color: #1a1a1a; 
             border: 1px solid #333; 
             border-radius: 8px; 
             padding: 15px; 
             gap: 15px; 
-            min-height: 0;
+            min-height: 0; 
         }
 
         .log-controls { 
@@ -180,40 +206,31 @@
             gap: 12px; 
         }
 
-        .mod-group {
+        .mod-group { 
             display: flex; 
             align-items: center; 
             flex-wrap: wrap; 
-            gap: 15px;
+            gap: 15px; 
             background: #252526; 
             padding: 10px; 
             border-radius: 6px; 
-            border: 1px solid #333;
+            border: 1px solid #333; 
         }
 
-        .clinical-group {
-            background-color: #0d2a3a; 
-            border-color: #0277bd; 
-            display: flex;
+        .clinical-group { 
+            background-color: #1e262b; 
+            border-color: #546e7a; 
+            display: flex; 
             flex-direction: column; 
             gap: 8px; 
             padding: 10px; 
             border-radius: 6px; 
-            border: 1px solid #0277bd;
+            border: 1px solid #546e7a; 
         }
 
-        .clinical-grid { 
-            display: grid; 
-            grid-template-columns: repeat(3, 1fr); 
-            gap: 8px; 
-        }
-
-        .action-grid { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 10px; 
-        }
-
+        .clinical-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        
         .btn-action { 
             padding: 12px; 
             font-size: 1rem; 
@@ -223,37 +240,27 @@
             cursor: pointer; 
             font-weight: bold; 
         }
+
         .btn-maint { background-color: #007acc; } 
         .btn-maint:hover { background-color: #005999; }
         .btn-play { background-color: #9c27b0; } 
         .btn-play:hover { background-color: #7b1fa2; }
         .btn-baby { background-color: #2e7d32; } 
         .btn-baby:hover { background-color: #1b5e20; }
-        .btn-clinical { background-color: #0277bd; } 
-        .btn-clinical:hover { background-color: #01579b; }
-
-        /* TABLE CONTAINER */
-        .table-container {
+        .btn-clinical { background-color: #546e7a; } 
+        .btn-clinical:hover { background-color: #455a64; }
+        
+        .table-container { 
             flex: 1 1 auto; 
             overflow-y: auto; 
-            border: 1px solid #333;
+            border: 1px solid #333; 
             border-radius: 6px; 
-            background-color: #1e1e1e;
+            background-color: #1e1e1e; 
         }
 
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-        }
-
-        th, td { 
-            padding: 10px 12px; 
-            text-align: left; 
-            border-bottom: 1px solid #333; 
-            vertical-align: middle; 
-            font-size: 0.9rem; 
-        }
-
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #333; vertical-align: middle; font-size: 0.9rem; }
+        
         th { 
             background-color: #252526; 
             position: sticky; 
@@ -264,116 +271,63 @@
             color: #aaa; 
         }
 
-        .badge { 
-            padding: 3px 6px; 
-            border-radius: 4px; 
-            font-size: 0.75rem; 
-            font-weight: bold; 
-            color: #fff; 
-        }
-
-        .bg-maint { background-color: #007acc; }
-        .bg-play { background-color: #9c27b0; }
-        .bg-baby { background-color: #2e7d32; }
-        .bg-clinical { background-color: #0277bd; }
+        .badge { padding: 3px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; color: #fff; }
+        .bg-maint { background-color: #007acc; } 
+        .bg-play { background-color: #9c27b0; } 
+        .bg-baby { background-color: #2e7d32; } 
+        .bg-clinical { background-color: #546e7a; }
         
-        /* FORM INPUTS */
         input[type="datetime-local"], 
         input[type="number"], 
         select, 
-        input[type="file"] {
+        input[type="file"] { 
             background-color: #1e1e1e; 
             color: #e0e0e0; 
-            border: 1px solid #333;
+            border: 1px solid #333; 
             padding: 6px; 
             border-radius: 4px; 
             color-scheme: dark; 
             box-sizing: border-box; 
-            width: 100%;
+            width: 100%; 
         }
 
-        input[type="checkbox"] { 
-            width: auto; 
-            margin-right: 5px;
-        }
-
-        button { 
-            cursor: pointer; 
-        }
-
-        /* MODALS */
-        dialog {
+        input[type="checkbox"] { width: auto; margin-right: 5px; }
+        button { cursor: pointer; }
+        
+        dialog { 
             background-color: #1e1e1e; 
             color: #e0e0e0; 
             border: 1px solid #444; 
             border-radius: 8px; 
             width: 550px; 
             padding: 25px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8); 
         }
 
-        dialog::backdrop { 
-            background: rgba(0, 0, 0, 0.75); 
-        }
-
-        .modal-section { 
-            margin-bottom: 20px; 
-            padding-bottom: 20px; 
-            border-bottom: 1px solid #333; 
-        }
-
-        .modal-section:last-child { 
-            border-bottom: none; 
-            margin-bottom: 0; 
-            padding-bottom: 0; 
-        }
+        dialog::backdrop { background: rgba(0, 0, 0, 0.75); }
+        .modal-section { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #333; }
+        .modal-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
         
-        ::-webkit-scrollbar { 
-            width: 8px; 
-            height: 8px; 
-        } 
-        ::-webkit-scrollbar-track { 
-            background: #1e1e1e; 
-        }
-        ::-webkit-scrollbar-thumb { 
-            background: #555; 
-            border-radius: 4px; 
-        } 
-        ::-webkit-scrollbar-thumb:hover { 
-            background: #777; 
-        }
-
-        .stealth-active .sensitive-data { 
-            filter: blur(10px); 
-            opacity: 0.3; 
-            pointer-events: none; 
-        }
-
-        .apexcharts-tooltip { 
-            background: #252526 !important; 
-            border: 1px solid #444 !important; 
-            color: #fff !important; 
-        }
-        .apexcharts-tooltip-title { 
-            background: #1e1e1e !important; 
-            border-bottom: 1px solid #444 !important; 
-            font-family: monospace; 
-            font-size: 12px !important; 
-        }
-        .apexcharts-toolbar { 
-            z-index: 2 !important; 
-        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; } 
+        ::-webkit-scrollbar-track { background: #1e1e1e; }
+        ::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; } 
+        ::-webkit-scrollbar-thumb:hover { background: #777; }
+        
+        .stealth-active .sensitive-data { filter: blur(10px); opacity: 0.3; pointer-events: none; }
+        
+        .apexcharts-tooltip { background: #252526 !important; border: 1px solid #444 !important; color: #fff !important; }
+        .apexcharts-tooltip-title { background: #1e1e1e !important; border-bottom: 1px solid #444 !important; font-family: monospace; font-size: 12px !important; }
+        .apexcharts-toolbar { z-index: 2 !important; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 </head>
 <body>
     <div class="app-wrapper" id="appContainer">
         
-        <!-- TOP HEADER -->
         <div class="header-row">
             <h1 style="margin: 0;">System Maintenance Utility</h1>
             <div>
-                <button class="btn-icon" onclick="generatePdf()" style="margin-right: 5px; background-color: #0277bd;">📄 90-Day Report</button>
+                <button class="btn-icon" onclick="generatePdf()" style="margin-right: 5px; background-color: #546e7a;">📄 90-Day Report</button>
                 <button class="btn-icon" onclick="document.getElementById('manualLogModal').showModal()" style="margin-right: 5px;">➕ Add Past Log</button>
                 <button class="btn-icon" onclick="document.getElementById('settingsModal').showModal()">⚙️ Settings</button>
             </div>
@@ -381,11 +335,10 @@
         
         <div id="blackoutBanner" class="banner sensitive-data"></div>
         <div id="testBanner" class="banner banner-danger">WARNING: TEST MODE ACTIVE. FAKE DATA DISPLAYED.</div>
+        <div id="thermalBanner" class="banner banner-warning"></div>
 
-        <!-- MAIN DASHBOARD -->
         <main class="main-grid sensitive-data">
             
-            <!-- LEFT PANE: ANALYTICS -->
             <div class="left-pane">
                 <div class="hud-container">
                     <div class="hud-box">
@@ -421,24 +374,39 @@
                         <div id="volumeChartCanvas"></div>
                     </div>
                 </div>
+
+                <div class="chart-card" style="flex: 0 0 auto;">
+                    <h3 class="card-title">365-Day Activity Matrix</h3>
+                    <div class="heatmap-scroll">
+                        <div class="heatmap-grid" id="heatmapGrid"></div>
+                    </div>
+                    <div class="heatmap-legend">
+                        <span>Dry</span>
+                        <div class="heatmap-cell level-0"></div>
+                        <div class="heatmap-cell level-1"></div>
+                        <div class="heatmap-cell level-2"></div>
+                        <div class="heatmap-cell level-3"></div>
+                        <span>Yield</span>
+                    </div>
+                </div>
             </div>
 
-            <!-- RIGHT PANE: COMMAND & CONTROL -->
             <div class="right-pane">
                 <div class="log-controls">
                     <h3 class="card-title" style="border:none; margin:0; padding:0;">Log New Event</h3>
-                    
                     <div class="mod-group">
-                        <label style="display:flex; align-items:center; gap:5px; font-size: 0.85rem;">
-                            <input type="checkbox" id="modHeat"> 🌡️ Fever
-                        </label>
+                        <select id="modHeat" style="font-size: 0.85rem; width: 140px;">
+                            <option value="0" selected>Temp: Normal</option>
+                            <option value="1">Temp: Mild (Local)</option>
+                            <option value="2">Temp: Mod (Fever/Tub)</option>
+                            <option value="3">Temp: Severe (>101°F)</option>
+                        </select>
                         <label style="display:flex; align-items:center; gap:5px; font-size: 0.85rem;">
                             <input type="checkbox" id="modZinc"> 💊 Zinc
                         </label>
                         <label style="display:flex; align-items:center; gap:5px; font-size: 0.85rem;">
                             <input type="checkbox" id="modMaca"> 🌿 Maca
                         </label>
-                        
                         <div style="flex:1; display:flex; justify-content: flex-end; align-items:center; gap: 8px;">
                             <span style="font-size: 0.85rem; color:#888;">Vol:</span>
                             <select id="modVolume" style="width: 120px; font-size: 0.85rem;">
@@ -451,7 +419,7 @@
                     </div>
 
                     <div class="clinical-group">
-                        <span style="color: #64b5f6; font-size: 0.8rem; font-weight: bold;">CLINICAL METRICS (OPTIONAL)</span>
+                        <span style="color: #90a4ae; font-size: 0.8rem; font-weight: bold;">CLINICAL METRICS (OPTIONAL)</span>
                         <div class="clinical-grid">
                             <input type="number" id="modClinicalVol" step="0.1" placeholder="Vol (mL)" style="font-size: 0.8rem;">
                             <input type="number" id="modConcentration" placeholder="Conc (M)" style="font-size: 0.8rem;">
@@ -470,11 +438,10 @@
                         <button class="btn-action btn-maint" onclick="logEvent('Maintenance')">Maintenance</button>
                         <button class="btn-action btn-play" onclick="logEvent('Playtime')">Playtime</button>
                         <button class="btn-action btn-baby" onclick="logEvent('Baby-Making')">Baby-Making</button>
-                        <button class="btn-action btn-clinical" onclick="logEvent('Clinical-Lab')">Clinical Lab</button>
+                        <button class="btn-action btn-clinical" id="btnClinicalLog" onclick="logEvent('Clinical-Lab')">Clinical Lab</button>
                     </div>
                 </div>
 
-                <!-- DYNAMIC SCROLLING TABLE -->
                 <div class="table-container">
                     <table>
                         <thead>
@@ -485,22 +452,19 @@
                                 <th>Act</th>
                             </tr>
                         </thead>
-                        <tbody id="logList">
-                            <!-- Populated via JS -->
-                        </tbody>
+                        <tbody id="logList"></tbody>
                     </table>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- SETTINGS & ANALYTICS MODAL -->
+    <!-- SETTINGS MODAL -->
     <dialog id="settingsModal">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <h2>Configuration & Analytics</h2>
             <button class="btn-icon" style="background: transparent; padding: 0;" onclick="document.getElementById('settingsModal').close()">❌</button>
         </div>
-
         <div class="modal-section">
             <h3 style="font-size: 1rem; margin-bottom: 10px;">Threshold Limits</h3>
             <div style="display: flex; gap: 10px; align-items: flex-end;">
@@ -515,7 +479,6 @@
                 <button onclick="saveSettings()" style="background: #007acc; border:none; padding:8px 15px; color:#fff; border-radius:4px;">Save</button>
             </div>
         </div>
-
         <div class="modal-section">
             <h3 style="font-size: 1rem; margin-bottom: 10px;">Clinical Blackout Window</h3>
             <div style="display: flex; gap: 10px;">
@@ -524,7 +487,6 @@
                 <button onclick="clearAppointment()" style="background-color: #555; border:none; padding:8px 15px; color:#fff; border-radius:4px;">Clear</button>
             </div>
         </div>
-
         <div class="modal-section">
             <h3 style="font-size: 1rem; margin-bottom: 10px;">Mathematical Analysis</h3>
             <div style="display: flex; gap: 10px;">
@@ -532,7 +494,6 @@
                 <button style="flex: 1; background-color: #4caf50; border:none; padding:8px; color:#fff; border-radius:4px;" onclick="analyzeSupplements()">Analyze Supps</button>
             </div>
         </div>
-
         <div class="modal-section" style="border-color: #444; border-bottom: none; margin-bottom: 0; padding-bottom: 0;">
             <h3 style="font-size: 1rem; margin-bottom: 10px; color: #aaa;">Debug & Testing Sandbox</h3>
             <button id="testModeBtn" onclick="toggleTestMode()" style="background-color: #555; width: 100%; border:none; padding:10px; color:#fff; border-radius:4px;">Enter Test Mode (Fake Data)</button>
@@ -545,7 +506,6 @@
             <h2>Add Retroactive Log</h2>
             <button class="btn-icon" style="background: transparent; padding: 0;" onclick="document.getElementById('manualLogModal').close()">❌</button>
         </div>
-        
         <div style="display: flex; flex-direction: column; gap: 15px;">
             <div>
                 <label style="font-size:0.8rem; color:#888; display:block; margin-bottom:5px;">Date & Time</label>
@@ -569,15 +529,18 @@
                     <option value="High">High</option>
                 </select>
             </div>
-            
-            <div style="display: flex; gap: 15px; background: #1a1a1a; padding: 10px; border-radius: 4px; border: 1px solid #333;">
-                <label><input type="checkbox" id="manualHeat"> Fever</label>
+            <div style="display: flex; gap: 15px; background: #1a1a1a; padding: 10px; border-radius: 4px; border: 1px solid #333; align-items: center;">
+                <select id="manualHeat" style="font-size: 0.8rem; width: 140px;">
+                    <option value="0" selected>Temp: Normal</option>
+                    <option value="1">Temp: Mild (Local)</option>
+                    <option value="2">Temp: Mod (Fever/Tub)</option>
+                    <option value="3">Temp: Severe (>101°F)</option>
+                </select>
                 <label><input type="checkbox" id="manualZinc"> Zinc</label>
                 <label><input type="checkbox" id="manualMaca"> Maca</label>
             </div>
-
             <div id="manualClinicalFields" style="display: none; flex-direction: column; gap: 10px; padding-top: 5px; border-top: 1px dashed #444;">
-                <label style="color:#64b5f6; font-size: 0.8rem; font-weight:bold;">CLINICAL LAB DATA (OPTIONAL)</label>
+                <label style="color:#90a4ae; font-size: 0.8rem; font-weight:bold;">CLINICAL LAB DATA (OPTIONAL)</label>
                 <div class="clinical-grid">
                     <input type="number" id="manualClinicalVol" step="0.1" placeholder="Vol (mL)">
                     <input type="number" id="manualConc" placeholder="Conc (M)">
@@ -591,231 +554,307 @@
                     <input type="file" id="manualLabFile" accept="application/pdf" style="flex:1;">
                 </div>
             </div>
-
             <button style="width: 100%; margin-top: 10px; background:#007acc; border:none; padding:10px; color:#fff; font-weight:bold; border-radius:4px;" onclick="submitManualLog()">Insert Record</button>
         </div>
     </dialog>
 
     <script>
-        let myChart = null;
-        let modeChart = null;
+        let myChart = null; 
+        let modeChart = null; 
         let volChart = null;
-        
         let globalLogs = []; 
-        let labFileDataBase64 = null;
+        let labFileDataBase64 = null; 
         let labFileName = null;
-        let manualLabFileDataBase64 = null;
+        let manualLabFileDataBase64 = null; 
         let manualLabFileName = null;
 
-        // Handle file selection for main log entry
         document.getElementById('labFile').addEventListener('change', function(e) {
             const file = e.target.files[0];
-            if (file) {
-                labFileName = file.name;
-                const reader = new FileReader();
-                reader.onload = function(event) { 
-                    labFileDataBase64 = event.target.result.split(',')[1]; 
-                };
-                reader.readAsDataURL(file);
+            if (file) { 
+                labFileName = file.name; 
+                const reader = new FileReader(); 
+                reader.onload = function(event) { labFileDataBase64 = event.target.result.split(',')[1]; }; 
+                reader.readAsDataURL(file); 
             } else { 
                 labFileDataBase64 = null; 
                 labFileName = null; 
             }
         });
 
-        // Handle file selection for retroactive log entry
         document.getElementById('manualLabFile').addEventListener('change', function(e) {
             const file = e.target.files[0];
-            if (file) {
-                manualLabFileName = file.name;
-                const reader = new FileReader();
-                reader.onload = function(event) { 
-                    manualLabFileDataBase64 = event.target.result.split(',')[1]; 
-                };
-                reader.readAsDataURL(file);
+            if (file) { 
+                manualLabFileName = file.name; 
+                const reader = new FileReader(); 
+                reader.onload = function(event) { manualLabFileDataBase64 = event.target.result.split(',')[1]; }; 
+                reader.readAsDataURL(file); 
             } else { 
                 manualLabFileDataBase64 = null; 
                 manualLabFileName = null; 
             }
         });
 
-        function sendAction(action, data = {}) {
-            data.action = action;
-            window.external.sendMessage(JSON.stringify(data));
+        function sendAction(action, data = {}) { 
+            data.action = action; 
+            window.external.sendMessage(JSON.stringify(data)); 
         }
 
-        function generatePdf() { 
-            sendAction('GENERATE_PDF'); 
+        function generatePdf() { sendAction('GENERATE_PDF'); }
+
+        // --- BIOLOGICAL SATURATION INDEX ---
+        function getSupplementSaturation(logs, targetTs, flagProp, daysBack) {
+            const windowStart = targetTs - (daysBack * 24 * 3600);
+            const windowLogs = logs.filter(l => l.timestamp >= windowStart && l.timestamp <= targetTs);
+            if (windowLogs.length === 0) return false;
+            const activeCount = windowLogs.filter(l => l[flagProp] === 1).length;
+            return (activeCount / windowLogs.length) >= 0.5; 
+        }
+
+        // --- THERMAL SHADOW CALCULATOR (WITH CLINICAL OVERRIDE) ---
+        function calculateThermalShadow(logs, targetTs) {
+            const biologicalCycleSeconds = 74 * 24 * 3600;
+            const shadowWindow = targetTs - biologicalCycleSeconds;
+            
+            // 1. Find severe heat events (Level 2 or 3) within the 74-day window
+            const severeEvents = logs.filter(l => l.timestamp >= shadowWindow && l.timestamp <= targetTs && l.heatFlag >= 2);
+            
+            if (severeEvents.length > 0) {
+                // Get the most recent severe heat event
+                severeEvents.sort((a, b) => b.timestamp - a.timestamp);
+                const latestHeatEvent = severeEvents[0];
+                
+                // 2. CLINICAL OVERRIDE: Check for ground-truth lab data recorded AFTER the heat event
+                const subsequentLabs = logs.filter(l => 
+                    l.mode === 'Clinical-Lab' && 
+                    l.timestamp > latestHeatEvent.timestamp && 
+                    l.timestamp <= targetTs
+                );
+
+                for (let i = 0; i < subsequentLabs.length; i++) {
+                    const lab = subsequentLabs[i];
+                    // WHO Baseline Thresholds: Concentration >= 15 M/mL AND Motility >= 40%
+                    if (lab.concentration >= 15 && lab.motility >= 40) {
+                        // Ground truth proves the system is healthy. Shadow is negated.
+                        return { isCompromised: false, overriddenBy: lab.id };
+                    }
+                }
+
+                // 3. No override found. Shadow remains active.
+                const clearanceDate = latestHeatEvent.timestamp + biologicalCycleSeconds;
+                return { isCompromised: true, severity: latestHeatEvent.heatFlag, clearsAt: clearanceDate };
+            }
+            return { isCompromised: false };
         }
 
         window.external.receiveMessage(message => {
-            const data = JSON.parse(message);
-            
-            if (data.action === 'UPDATE_STATE') {
-                const now = Math.floor(Date.now() / 1000);
-                let minH = 24, maxH = 72;
+            try {
+                const data = JSON.parse(message);
                 
-                if (data.settings) { 
-                    minH = data.settings.min; 
-                    maxH = data.settings.max; 
-                }
-                
-                document.getElementById('minHours').value = minH;
-                document.getElementById('maxHours').value = maxH;
-
-                if (data.isTestMode) {
-                    document.getElementById('testBanner').style.display = 'block';
-                    const btn = document.getElementById('testModeBtn');
-                    btn.innerText = 'Exit Test Mode (Restore Real Data)';
-                    btn.style.backgroundColor = '#d32f2f';
-                } else {
-                    document.getElementById('testBanner').style.display = 'none';
-                    const btn = document.getElementById('testModeBtn');
-                    btn.innerText = 'Enter Test Mode (Fake Data)';
-                    btn.style.backgroundColor = '#555';
+                if (data.action === 'SHOW_ERROR') {
+                    document.getElementById('logList').innerHTML = `<tr><td colspan="4" style="color:#ff5252; padding:20px;"><strong>BACKEND CRASH CATCHED:</strong><br/>${data.message}</td></tr>`;
+                    return;
                 }
 
-                globalLogs = data.logs;
-                const list = document.getElementById('logList');
-                list.innerHTML = '';
-                
-                data.logs.forEach(log => {
-                    const dateObj = new Date(log.timestamp * 1000);
-                    const dateStr = dateObj.toLocaleDateString(undefined, {month:'short', day:'numeric'}) + ' ' + dateObj.toLocaleTimeString(undefined, {hour:'2-digit', minute:'2-digit', hour12:false});
+                if (data.action === 'UPDATE_STATE') {
+                    const now = Math.floor(Date.now() / 1000);
+                    let minH = 24, maxH = 72;
+                    if (data.settings) { 
+                        minH = data.settings.min; 
+                        maxH = data.settings.max; 
+                    }
                     
-                    let badgeClass = 'bg-maint';
-                    if (log.mode === 'Playtime') badgeClass = 'bg-play';
-                    else if (log.mode === 'Baby-Making') badgeClass = 'bg-baby';
-                    else if (log.mode === 'Clinical-Lab') badgeClass = 'bg-clinical';
+                    document.getElementById('minHours').value = minH; 
+                    document.getElementById('maxHours').value = maxH;
 
-                    let metricsStr = `Vol:${log.volume}`;
-                    if (log.heatFlag === 1) metricsStr += ' <span style="color:#ff5252;" title="Heat/Fever Flag">🌡️</span>';
-                    if (log.zincFlag === 1) metricsStr += ' <span style="color:#4db6ac;" title="Zinc Supplement">💊</span>';
-                    if (log.macaFlag === 1) metricsStr += ' <span style="color:#81c784;" title="Maca Root">🌿</span>';
+                    if (data.isTestMode) {
+                        document.getElementById('testBanner').style.display = 'block';
+                        const btn = document.getElementById('testModeBtn'); 
+                        btn.innerText = 'Exit Test Mode (Restore Real Data)'; 
+                        btn.style.backgroundColor = '#d32f2f';
+                    } else {
+                        document.getElementById('testBanner').style.display = 'none';
+                        const btn = document.getElementById('testModeBtn'); 
+                        btn.innerText = 'Enter Test Mode (Fake Data)'; 
+                        btn.style.backgroundColor = '#555';
+                    }
 
-                    let pdfBtn = log.hasPdf 
-                        ? `<button style="background:#0277bd; padding:4px 6px; font-size:0.7rem; color:#fff; border:none; border-radius:3px; cursor:pointer;" onclick="sendAction('OPEN_LAB_REPORT', {id: ${log.id}})">PDF</button>` 
-                        : '';
+                    globalLogs = data.logs || [];
+                    const list = document.getElementById('logList'); 
+                    list.innerHTML = '';
+                    
+                    if (globalLogs.length === 0) {
+                        list.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:#888;">No records found or DB failed to read.</td></tr>`;
+                    }
 
-                    // THE PURGE BUTTON IS BACK ON THE MAIN ROW
-                    list.innerHTML += `
-                        <tr id="log-row-${log.id}">
-                            <td style="white-space: nowrap;">${dateStr}</td>
-                            <td><span class="badge ${badgeClass}">${log.mode}</span></td>
-                            <td style="font-size: 0.85rem; color: #ccc;">${metricsStr}</td>
-                            <td>
-                                <div style="display: flex; gap: 4px;">
-                                    ${pdfBtn}
-                                    <button style="background:#f57c00; padding:4px 6px; font-size:0.7rem; color:#fff; border:none; border-radius:3px; cursor:pointer;" onclick="editLog(${log.id})">EDIT</button>
-                                    <button style="background:#d32f2f; padding:4px 6px; font-size:0.7rem; color:#fff; border:none; border-radius:3px; cursor:pointer;" onclick="if(confirm('Permanently purge this record?')) deleteLog(${log.id})">PURGE</button>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
-                });
+                    globalLogs.forEach(log => {
+                        const dateObj = new Date(log.timestamp * 1000);
+                        const dateStr = dateObj.toLocaleDateString(undefined, {month:'short', day:'numeric'}) + ' ' + dateObj.toLocaleTimeString(undefined, {hour:'2-digit', minute:'2-digit', hour12:false});
+                        
+                        let badgeClass = 'bg-maint';
+                        if (log.mode === 'Playtime') badgeClass = 'bg-play'; 
+                        else if (log.mode === 'Baby-Making') badgeClass = 'bg-baby'; 
+                        else if (log.mode === 'Clinical-Lab') badgeClass = 'bg-clinical';
 
-                updateTelemetry(data.logs, now, minH, maxH);
-                updateChart(data.logs);
-                updateBlackoutBanner(data.appointment, now);
+                        let metricsStr = `Vol:${log.volume}`;
+                        if (log.heatFlag > 0) metricsStr += ` <span style="color:#ff5252;" title="Heat Level ${log.heatFlag}">🌡️L${log.heatFlag}</span>`;
+                        if (log.zincFlag === 1) metricsStr += ' <span style="color:#aaa;" title="Zinc Supplement">💊</span>';
+                        if (log.macaFlag === 1) metricsStr += ' <span style="color:#aaa;" title="Maca Root">🌿</span>';
+
+                        let pdfBtn = log.hasPdf ? `<button style="background:#546e7a; padding:4px 6px; font-size:0.7rem; color:#fff; border:none; border-radius:3px; cursor:pointer;" onclick="sendAction('OPEN_LAB_REPORT', {id: ${log.id}})">PDF</button>` : '';
+
+                        list.innerHTML += `
+                            <tr id="log-row-${log.id}">
+                                <td style="white-space: nowrap;">${dateStr}</td>
+                                <td><span class="badge ${badgeClass}">${log.mode}</span></td>
+                                <td style="font-size: 0.85rem; color: #ccc;">${metricsStr}</td>
+                                <td>
+                                    <div style="display: flex; gap: 4px;">
+                                        ${pdfBtn}
+                                        <button style="background:#f57c00; padding:4px 6px; font-size:0.7rem; color:#fff; border:none; border-radius:3px; cursor:pointer;" onclick="editLog(${log.id})">EDIT</button>
+                                        <button style="background:#d32f2f; padding:4px 6px; font-size:0.7rem; color:#fff; border:none; border-radius:3px; cursor:pointer;" onclick="if(confirm('Permanently purge this record?')) deleteLog(${log.id})">PURGE</button>
+                                    </div>
+                                </td>
+                            </tr>`;
+                    });
+
+                    // Thermal Shadow UI Checks
+                    const currentShadow = calculateThermalShadow(globalLogs, now);
+                    const thermBanner = document.getElementById('thermalBanner');
+                    const clinBtn = document.getElementById('btnClinicalLog');
+                    
+                    if (currentShadow.isCompromised) {
+                        const clearDate = new Date(currentShadow.clearsAt * 1000).toLocaleDateString();
+                        thermBanner.style.display = 'block';
+                        thermBanner.innerHTML = `⚠️ SYSTEM COMPROMISED: Level ${currentShadow.severity} Thermal Shadow active. Avoid Clinical Baselines until ${clearDate}.`;
+                        clinBtn.style.opacity = '0.5';
+                        clinBtn.title = "Not recommended during Thermal Shadow";
+                    } else {
+                        thermBanner.style.display = 'none';
+                        clinBtn.style.opacity = '1';
+                        clinBtn.title = "";
+                    }
+
+                    updateTelemetry(globalLogs, now, minH, maxH);
+                    updateHeatmap(globalLogs);
+                    
+                    try { 
+                        updateChart(globalLogs); 
+                    } catch (chartErr) { 
+                        console.error(chartErr);
+                        document.getElementById('chartCanvas').innerHTML = `<div style="padding:15px; color:#ff5252;">Chart Error: ${chartErr.message}. Verify internet connection for ApexCharts CDN.</div>`;
+                    }
+                    
+                    updateBlackoutBanner(data.appointment, now);
+                }
+            } catch (superErr) {
+                document.getElementById('logList').innerHTML = `<tr><td colspan="4" style="color:#ff5252; padding:20px;"><strong>FRONTEND CRASH CATCHED:</strong><br/>${superErr.message}<br/>${superErr.stack}</td></tr>`;
             }
         });
 
-        window.onload = () => {
-            sendAction('GET_STATE');
-            setInterval(() => { sendAction('GET_STATE'); }, 60000);
+        window.onload = () => { 
+            sendAction('GET_STATE'); 
+            setInterval(() => { sendAction('GET_STATE'); }, 60000); 
         };
 
-        function estimateBabyMakingVolume(timestamp, isZincActive) {
+        function estimateBabyMakingVolume(timestamp) {
             let priorRelease = null;
-            for (let i = 0; i < globalLogs.length; i++) {
-                if (globalLogs[i].timestamp < timestamp && globalLogs[i].volume !== 'None' && globalLogs[i].volume !== 'N/A') {
+            for (let i = 0; i < globalLogs.length; i++) { 
+                if (globalLogs[i].timestamp < timestamp && globalLogs[i].volume !== 'None' && globalLogs[i].volume !== 'N/A') { 
                     priorRelease = globalLogs[i]; 
                     break; 
-                }
+                } 
             }
             
-            let minH = parseFloat(document.getElementById('minHours').value) || 24;
-            let maxH = parseFloat(document.getElementById('maxHours').value) || 72;
+            let minH = parseFloat(document.getElementById('minHours').value) || 24; 
+            let maxH = parseFloat(document.getElementById('maxHours').value) || 72; 
             let gapHours = maxH; 
             
             if (priorRelease) gapHours = (timestamp - priorRelease.timestamp) / 3600;
             
-            let estVol = 'Normal';
-            if (gapHours < minH) estVol = 'Low';
+            let estVol = 'Normal'; 
+            if (gapHours < minH) estVol = 'Low'; 
             else if (gapHours >= maxH) estVol = 'High';
             
-            if (isZincActive) {
-                if (estVol === 'Low') estVol = 'Normal';
-                else if (estVol === 'Normal') estVol = 'High';
+            const isZincSaturated = getSupplementSaturation(globalLogs, timestamp, 'zincFlag', 21);
+            if (isZincSaturated) { 
+                if (estVol === 'Low') estVol = 'Normal'; 
+                else if (estVol === 'Normal') estVol = 'High'; 
             }
             return estVol;
         }
 
         function logEvent(mode) { 
-            let vol = document.getElementById('modVolume').value;
+            let vol = document.getElementById('modVolume').value; 
             const now = Math.floor(Date.now() / 1000);
             
-            let heat = document.getElementById('modHeat').checked ? 1 : 0;
-            let zinc = document.getElementById('modZinc').checked ? 1 : 0;
+            let heat = parseInt(document.getElementById('modHeat').value) || 0; 
+            let zinc = document.getElementById('modZinc').checked ? 1 : 0; 
             let maca = document.getElementById('modMaca').checked ? 1 : 0;
             
-            let cvol = parseFloat(document.getElementById('modClinicalVol').value) || 0.0;
-            let conc = parseInt(document.getElementById('modConcentration').value) || 0;
-            let mot = parseInt(document.getElementById('modMotility').value) || 0;
-            let pmot = parseInt(document.getElementById('modProgMotility').value) || 0;
-            let morph = parseInt(document.getElementById('modMorphology').value) || 0;
+            let cvol = parseFloat(document.getElementById('modClinicalVol').value) || 0.0; 
+            let conc = parseInt(document.getElementById('modConcentration').value) || 0; 
+            let mot = parseInt(document.getElementById('modMotility').value) || 0; 
+            let pmot = parseInt(document.getElementById('modProgMotility').value) || 0; 
+            let morph = parseInt(document.getElementById('modMorphology').value) || 0; 
             let ph = parseFloat(document.getElementById('modPhLevel').value) || 0.0;
+            
+            if (mode === 'Clinical-Lab' && (vol === 'None' || vol === 'N/A')) vol = 'Normal'; 
+            
+            const currentShadow = calculateThermalShadow(globalLogs, now);
+            if (mode === 'Clinical-Lab' && currentShadow.isCompromised) {
+                if (!confirm("A Thermal Shadow is active, which compromises clinical accuracy. Are you sure you want to log a baseline test?")) return;
+            }
 
-            if (mode === 'Clinical-Lab' && (vol === 'None' || vol === 'N/A')) vol = 'Normal';
-            if (mode === 'Baby-Making') vol = estimateBabyMakingVolume(now, zinc === 1);
-
+            if (mode === 'Baby-Making') vol = estimateBabyMakingVolume(now);
+            
             sendAction('LOG_EVENT', { 
-                mode: mode, volume: vol, heatFlag: heat, zincFlag: zinc, macaFlag: maca,
-                clinicalVol: cvol, concentration: conc, motility: mot, progMotility: pmot,
-                morphology: morph, phLevel: ph, labFileName: labFileName, labFileData: labFileDataBase64
+                mode: mode, volume: vol, heatFlag: heat, zincFlag: zinc, macaFlag: maca, 
+                clinicalVol: cvol, concentration: conc, motility: mot, progMotility: pmot, 
+                morphology: morph, phLevel: ph, labFileName: labFileName, labFileData: labFileDataBase64 
             }); 
             
-            document.getElementById('modHeat').checked = false;
-            document.getElementById('modVolume').value = 'Normal';
-            document.getElementById('modClinicalVol').value = '';
-            document.getElementById('modConcentration').value = '';
-            document.getElementById('modMotility').value = '';
-            document.getElementById('modProgMotility').value = '';
-            document.getElementById('modMorphology').value = '';
-            document.getElementById('modPhLevel').value = '';
+            document.getElementById('modHeat').value = "0"; 
+            document.getElementById('modVolume').value = 'Normal'; 
+            document.getElementById('modClinicalVol').value = ''; 
+            document.getElementById('modConcentration').value = ''; 
+            document.getElementById('modMotility').value = ''; 
+            document.getElementById('modProgMotility').value = ''; 
+            document.getElementById('modMorphology').value = ''; 
+            document.getElementById('modPhLevel').value = ''; 
             document.getElementById('labFile').value = '';
             
             labFileDataBase64 = null; 
             labFileName = null;
         }
 
-        function deleteLog(id) { 
-            sendAction('DELETE_LOG', { id: id }); 
-        }
+        function deleteLog(id) { sendAction('DELETE_LOG', { id: id }); }
         
         function editLog(id) {
-            const log = globalLogs.find(l => l.id === id);
+            const log = globalLogs.find(l => l.id === id); 
             if (!log) return;
             
-            const tr = document.getElementById(`log-row-${id}`);
-            const d = new Date(log.timestamp * 1000);
-            const tzOffset = d.getTimezoneOffset() * 60000;
+            const tr = document.getElementById(`log-row-${id}`); 
+            const d = new Date(log.timestamp * 1000); 
+            const tzOffset = d.getTimezoneOffset() * 60000; 
             const localISOTime = (new Date(d - tzOffset)).toISOString().slice(0, 16);
-
-            let displayClinical = log.mode === 'Clinical-Lab' ? 'grid' : 'none';
             
-            let maintSel = log.mode === 'Maintenance' ? 'selected' : '';
-            let playSel = log.mode === 'Playtime' ? 'selected' : '';
-            let babySel = log.mode === 'Baby-Making' ? 'selected' : '';
+            let displayClinical = log.mode === 'Clinical-Lab' ? 'grid' : 'none';
+            let maintSel = log.mode === 'Maintenance' ? 'selected' : ''; 
+            let playSel = log.mode === 'Playtime' ? 'selected' : ''; 
+            let babySel = log.mode === 'Baby-Making' ? 'selected' : ''; 
             let labSel = log.mode === 'Clinical-Lab' ? 'selected' : '';
             
-            let vNoneSel = (log.volume === 'None' || log.volume === 'N/A') ? 'selected' : '';
-            let vLowSel = log.volume === 'Low' ? 'selected' : '';
-            let vNormSel = log.volume === 'Normal' ? 'selected' : '';
+            let vNoneSel = (log.volume === 'None' || log.volume === 'N/A') ? 'selected' : ''; 
+            let vLowSel = log.volume === 'Low' ? 'selected' : ''; 
+            let vNormSel = log.volume === 'Normal' ? 'selected' : ''; 
             let vHighSel = log.volume === 'High' ? 'selected' : '';
             
-            let hChk = log.heatFlag === 1 ? 'checked' : '';
-            let zChk = log.zincFlag === 1 ? 'checked' : '';
+            let h0 = log.heatFlag === 0 ? 'selected' : '';
+            let h1 = log.heatFlag === 1 ? 'selected' : '';
+            let h2 = log.heatFlag === 2 ? 'selected' : '';
+            let h3 = log.heatFlag === 3 ? 'selected' : '';
+
+            let zChk = log.zincFlag === 1 ? 'checked' : ''; 
             let mChk = log.macaFlag === 1 ? 'checked' : '';
 
             tr.innerHTML = `
@@ -837,7 +876,12 @@
                                 <option value="Normal" ${vNormSel}>Norm</option>
                                 <option value="High" ${vHighSel}>High</option>
                             </select>
-                            <label style="font-size:0.75rem;"><input type="checkbox" id="edit-heat-${id}" ${hChk}> 🌡️</label>
+                            <select id="edit-heat-${id}" style="font-size:0.8rem; width:100px;">
+                                <option value="0" ${h0}>Heat 0</option>
+                                <option value="1" ${h1}>Heat 1</option>
+                                <option value="2" ${h2}>Heat 2</option>
+                                <option value="3" ${h3}>Heat 3</option>
+                            </select>
                             <label style="font-size:0.75rem;"><input type="checkbox" id="edit-zinc-${id}" ${zChk}> 💊</label>
                             <label style="font-size:0.75rem;"><input type="checkbox" id="edit-maca-${id}" ${mChk}> 🌿</label>
                         </div>
@@ -849,148 +893,138 @@
                             <input type="number" id="edit-morph-${id}" value="${log.morphology || ''}" style="font-size:0.75rem;" placeholder="Morph(%)">
                             <input type="number" id="edit-ph-${id}" value="${log.phLevel || ''}" step="0.1" style="font-size:0.75rem;" placeholder="pH">
                         </div>
-                        
-                        <!-- PDF UPLOAD RESTORED TO EDIT MENU -->
                         <div style="display:flex; align-items:center; gap:10px; margin-top:5px; background:#1a1a1a; padding:5px; border-radius:4px;">
                             <span style="font-size:0.75rem; color:#888;">Update PDF:</span>
                             <input type="file" id="edit-pdf-${id}" accept="application/pdf" style="flex:1; font-size:0.75rem; padding:4px;">
                         </div>
-
                         <div style="display:flex; gap:5px; justify-content:flex-end; margin-top:5px;">
                             <button style="background:#555; color:#fff; border:none; padding:5px 10px; border-radius:3px; cursor:pointer;" onclick="cancelEdit()">CANCEL</button>
                             <button style="background:#4caf50; color:#fff; border:none; padding:5px 15px; border-radius:3px; font-weight:bold; cursor:pointer;" onclick="saveEdit(${id})">SAVE</button>
                         </div>
                     </div>
-                </td>
-            `;
+                </td>`;
         }
 
-        function updateEditVolState(id) {
-            const mode = document.getElementById(`edit-mode-${id}`).value;
-            document.getElementById(`edit-clinical-fields-${id}`).style.display = (mode === 'Clinical-Lab') ? 'grid' : 'none';
+        function updateEditVolState(id) { 
+            const mode = document.getElementById(`edit-mode-${id}`).value; 
+            document.getElementById(`edit-clinical-fields-${id}`).style.display = (mode === 'Clinical-Lab') ? 'grid' : 'none'; 
         }
 
         function saveEdit(id) {
-            const tsInput = document.getElementById(`edit-ts-${id}`).value;
+            const tsInput = document.getElementById(`edit-ts-${id}`).value; 
             if (!tsInput) return;
             
-            const ts = Math.floor(new Date(tsInput).getTime() / 1000);
-            const mode = document.getElementById(`edit-mode-${id}`).value;
+            const ts = Math.floor(new Date(tsInput).getTime() / 1000); 
+            const mode = document.getElementById(`edit-mode-${id}`).value; 
             let vol = document.getElementById(`edit-vol-${id}`).value;
-            
-            let heat = document.getElementById(`edit-heat-${id}`).checked ? 1 : 0;
-            let zinc = document.getElementById(`edit-zinc-${id}`).checked ? 1 : 0;
+            let heat = parseInt(document.getElementById(`edit-heat-${id}`).value) || 0; 
+            let zinc = document.getElementById(`edit-zinc-${id}`).checked ? 1 : 0; 
             let maca = document.getElementById(`edit-maca-${id}`).checked ? 1 : 0;
             
             let cvol = 0, conc = 0, mot = 0, pmot = 0, morph = 0, ph = 0;
             
-            if (mode === 'Clinical-Lab') {
-                cvol = parseFloat(document.getElementById(`edit-cvol-${id}`).value) || 0.0;
-                conc = parseInt(document.getElementById(`edit-conc-${id}`).value) || 0;
-                mot = parseInt(document.getElementById(`edit-mot-${id}`).value) || 0;
-                pmot = parseInt(document.getElementById(`edit-pmot-${id}`).value) || 0;
-                morph = parseInt(document.getElementById(`edit-morph-${id}`).value) || 0;
-                ph = parseFloat(document.getElementById(`edit-ph-${id}`).value) || 0.0;
-                if (vol === 'None' || vol === 'N/A') vol = 'Normal';
+            if (mode === 'Clinical-Lab') { 
+                cvol = parseFloat(document.getElementById(`edit-cvol-${id}`).value) || 0.0; 
+                conc = parseInt(document.getElementById(`edit-conc-${id}`).value) || 0; 
+                mot = parseInt(document.getElementById(`edit-mot-${id}`).value) || 0; 
+                pmot = parseInt(document.getElementById(`edit-pmot-${id}`).value) || 0; 
+                morph = parseInt(document.getElementById(`edit-morph-${id}`).value) || 0; 
+                ph = parseFloat(document.getElementById(`edit-ph-${id}`).value) || 0.0; 
+                if (vol === 'None' || vol === 'N/A') vol = 'Normal'; 
             }
-            
-            if (mode === 'Baby-Making') vol = estimateBabyMakingVolume(ts, zinc === 1);
+            if (mode === 'Baby-Making') vol = estimateBabyMakingVolume(ts);
             
             const fileInput = document.getElementById(`edit-pdf-${id}`);
-            if (fileInput.files.length > 0) {
-                const file = fileInput.files[0];
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const b64 = event.target.result.split(',')[1];
+            if (fileInput.files.length > 0) { 
+                const file = fileInput.files[0]; 
+                const reader = new FileReader(); 
+                reader.onload = function(event) { 
+                    const b64 = event.target.result.split(',')[1]; 
                     sendAction('UPDATE_LOG', { 
-                        id: id, timestamp: ts, mode: mode, volume: vol, heatFlag: heat, zincFlag: zinc, macaFlag: maca,
-                        clinicalVol: cvol, concentration: conc, motility: mot, progMotility: pmot, morphology: morph, phLevel: ph,
-                        labFileName: file.name, labFileData: b64
-                    });
-                };
-                reader.readAsDataURL(file);
-            } else {
+                        id: id, timestamp: ts, mode: mode, volume: vol, heatFlag: heat, zincFlag: zinc, 
+                        macaFlag: maca, clinicalVol: cvol, concentration: conc, motility: mot, progMotility: pmot, 
+                        morphology: morph, phLevel: ph, labFileName: file.name, labFileData: b64 
+                    }); 
+                }; 
+                reader.readAsDataURL(file); 
+            } else { 
                 sendAction('UPDATE_LOG', { 
-                    id: id, timestamp: ts, mode: mode, volume: vol, heatFlag: heat, zincFlag: zinc, macaFlag: maca,
-                    clinicalVol: cvol, concentration: conc, motility: mot, progMotility: pmot, morphology: morph, phLevel: ph
-                });
+                    id: id, timestamp: ts, mode: mode, volume: vol, heatFlag: heat, zincFlag: zinc, 
+                    macaFlag: maca, clinicalVol: cvol, concentration: conc, motility: mot, progMotility: pmot, 
+                    morphology: morph, phLevel: ph 
+                }); 
             }
         }
         
-        function cancelEdit() { 
-            sendAction('GET_STATE'); 
-        }
+        function cancelEdit() { sendAction('GET_STATE'); }
         
-        function updateManualVolState() {
-            const mode = document.getElementById('manualMode').value;
-            const clinicalFields = document.getElementById('manualClinicalFields');
-            if (mode === 'Clinical-Lab') {
-                clinicalFields.style.display = 'flex';
-            } else {
-                clinicalFields.style.display = 'none';
-                document.getElementById('manualClinicalVol').value = '';
-                document.getElementById('manualConc').value = '';
-                document.getElementById('manualMot').value = '';
-                document.getElementById('manualProgMot').value = '';
-                document.getElementById('manualMorph').value = '';
-                document.getElementById('manualPh').value = '';
-                document.getElementById('manualLabFile').value = '';
+        function updateManualVolState() { 
+            const mode = document.getElementById('manualMode').value; 
+            const clinicalFields = document.getElementById('manualClinicalFields'); 
+            if (mode === 'Clinical-Lab') { 
+                clinicalFields.style.display = 'flex'; 
+            } else { 
+                clinicalFields.style.display = 'none'; 
+                document.getElementById('manualClinicalVol').value = ''; 
+                document.getElementById('manualConc').value = ''; 
+                document.getElementById('manualMot').value = ''; 
+                document.getElementById('manualProgMot').value = ''; 
+                document.getElementById('manualMorph').value = ''; 
+                document.getElementById('manualPh').value = ''; 
+                document.getElementById('manualLabFile').value = ''; 
                 manualLabFileName = null; 
-                manualLabFileDataBase64 = null;
-            }
+                manualLabFileDataBase64 = null; 
+            } 
         }
 
         function submitManualLog() {
-            const val = document.getElementById('manualDate').value;
+            const val = document.getElementById('manualDate').value; 
             if (!val) return;
-
-            const ts = Math.floor(new Date(val).getTime() / 1000);
-            const mode = document.getElementById('manualMode').value;
-            let vol = document.getElementById('manualVolume').value;
             
-            let heat = document.getElementById('manualHeat').checked ? 1 : 0;
-            let zinc = document.getElementById('manualZinc').checked ? 1 : 0;
+            const ts = Math.floor(new Date(val).getTime() / 1000); 
+            const mode = document.getElementById('manualMode').value; 
+            let vol = document.getElementById('manualVolume').value;
+            let heat = parseInt(document.getElementById('manualHeat').value) || 0; 
+            let zinc = document.getElementById('manualZinc').checked ? 1 : 0; 
             let maca = document.getElementById('manualMaca').checked ? 1 : 0;
             
-            let cvol = parseFloat(document.getElementById('manualClinicalVol').value) || 0.0;
-            let conc = parseInt(document.getElementById('manualConc').value) || 0;
-            let mot = parseInt(document.getElementById('manualMot').value) || 0;
-            let pmot = parseInt(document.getElementById('manualProgMot').value) || 0;
-            let morph = parseInt(document.getElementById('manualMorph').value) || 0;
+            let cvol = parseFloat(document.getElementById('manualClinicalVol').value) || 0.0; 
+            let conc = parseInt(document.getElementById('manualConc').value) || 0; 
+            let mot = parseInt(document.getElementById('manualMot').value) || 0; 
+            let pmot = parseInt(document.getElementById('manualProgMot').value) || 0; 
+            let morph = parseInt(document.getElementById('manualMorph').value) || 0; 
             let ph = parseFloat(document.getElementById('manualPh').value) || 0.0;
-
-            if (mode === 'Clinical-Lab' && (vol === 'None' || vol === 'N/A')) vol = 'Normal';
-            if (mode === 'Baby-Making') vol = estimateBabyMakingVolume(ts, zinc === 1);
-
+            
+            if (mode === 'Clinical-Lab' && (vol === 'None' || vol === 'N/A')) vol = 'Normal'; 
+            if (mode === 'Baby-Making') vol = estimateBabyMakingVolume(ts);
+            
             sendAction('MANUAL_LOG', { 
-                timestamp: ts, mode: mode, volume: vol, heatFlag: heat, zincFlag: zinc, macaFlag: maca,
-                clinicalVol: cvol, concentration: conc, motility: mot, progMotility: pmot, morphology: morph, phLevel: ph,
-                labFileName: manualLabFileName, labFileData: manualLabFileDataBase64 
+                timestamp: ts, mode: mode, volume: vol, heatFlag: heat, zincFlag: zinc, macaFlag: maca, 
+                clinicalVol: cvol, concentration: conc, motility: mot, progMotility: pmot, morphology: morph, 
+                phLevel: ph, labFileName: manualLabFileName, labFileData: manualLabFileDataBase64 
             });
             
-            document.getElementById('manualDate').value = "";
-            document.getElementById('manualHeat').checked = false;
-            document.getElementById('manualMode').value = 'Maintenance';
-            updateManualVolState();
+            document.getElementById('manualDate').value = ""; 
+            document.getElementById('manualHeat').value = "0"; 
+            document.getElementById('manualMode').value = 'Maintenance'; 
+            updateManualVolState(); 
             document.getElementById('manualLogModal').close();
         }
 
-        function setAppointment() {
-            const val = document.getElementById('apptDate').value;
-            if (val) sendAction('SET_APPOINTMENT', { timestamp: Math.floor(new Date(val).getTime() / 1000) });
+        function setAppointment() { 
+            const val = document.getElementById('apptDate').value; 
+            if (val) sendAction('SET_APPOINTMENT', { timestamp: Math.floor(new Date(val).getTime() / 1000) }); 
         }
 
-        function clearAppointment() { 
-            sendAction('CLEAR_APPOINTMENT'); 
+        function clearAppointment() { sendAction('CLEAR_APPOINTMENT'); }
+        
+        function saveSettings() { 
+            const min = parseFloat(document.getElementById('minHours').value); 
+            const max = parseFloat(document.getElementById('maxHours').value); 
+            sendAction('SAVE_SETTINGS', { min: min, max: max }); 
+            document.getElementById('settingsModal').close(); 
         }
-
-        function saveSettings() {
-            const min = parseFloat(document.getElementById('minHours').value);
-            const max = parseFloat(document.getElementById('maxHours').value);
-            sendAction('SAVE_SETTINGS', { min: min, max: max });
-            document.getElementById('settingsModal').close();
-        }
-
+        
         function toggleTestMode() { 
             sendAction('TOGGLE_TEST_MODE'); 
             document.getElementById('settingsModal').close(); 
@@ -1001,39 +1035,44 @@
                 alert("Not enough data. Keep logging!"); 
                 return; 
             }
-            let releaseLogs = globalLogs.filter(l => l.volume !== 'None' && l.volume !== 'N/A');
+            
+            let releaseLogs = [];
+            globalLogs.forEach(l => {
+                if (l.volume !== 'None' && l.volume !== 'N/A') {
+                    const shadow = calculateThermalShadow(globalLogs, l.timestamp);
+                    if (!shadow.isCompromised) releaseLogs.push(l);
+                }
+            });
+
             if (releaseLogs.length < 2) { 
-                alert("Not enough release data points to calibrate."); 
+                alert("Not enough uncompromised release data points to calibrate."); 
                 return; 
             }
-
+            
             let validGaps = [], allGaps = [];
             for (let i = 0; i < releaseLogs.length - 1; i++) {
-                const gap = (releaseLogs[i].timestamp - releaseLogs[i + 1].timestamp) / 3600;
+                const gap = (releaseLogs[i].timestamp - releaseLogs[i + 1].timestamp) / 3600; 
                 allGaps.push(gap);
-                if ((releaseLogs[i].mode === 'Maintenance' || releaseLogs[i].mode === 'Clinical-Lab') && 
-                    (releaseLogs[i].volume === 'Normal' || releaseLogs[i].volume === 'High') && 
-                    releaseLogs[i].heatFlag !== 1) {
-                    validGaps.push(gap);
+                if ((releaseLogs[i].mode === 'Maintenance' || releaseLogs[i].mode === 'Clinical-Lab') && (releaseLogs[i].volume === 'Normal' || releaseLogs[i].volume === 'High')) { 
+                    validGaps.push(gap); 
                 }
             }
-            
             if (validGaps.length === 0) { 
-                alert("No successful normal/high volume recoveries recorded yet."); 
+                alert("No successful uncompromised recoveries recorded yet."); 
                 return; 
             }
             
-            const roundedMin = parseFloat((validGaps.reduce((a,b)=>a+b,0) / validGaps.length).toFixed(1));
-            const meanAll = allGaps.reduce((a,b)=>a+b,0) / allGaps.length;
+            const roundedMin = parseFloat((validGaps.reduce((a,b)=>a+b,0) / validGaps.length).toFixed(1)); 
+            const meanAll = allGaps.reduce((a,b)=>a+b,0) / allGaps.length; 
             const stdDev = Math.sqrt(allGaps.reduce((sq, n) => sq + Math.pow(n - meanAll, 2), 0) / allGaps.length);
             
-            let recommendedMax = parseFloat((meanAll + stdDev).toFixed(1));
+            let recommendedMax = parseFloat((meanAll + stdDev).toFixed(1)); 
             if (recommendedMax > 120.0) recommendedMax = 120.0;
             
-            if (confirm(`Calibration Complete.\n\n[FLOOR] Minimum recovery gap: ${roundedMin} hours.\n[CEILING] Max endurance: ${recommendedMax} hours.\n\nUpdate your threshold settings?`)) {
+            if (confirm(`Calibration Complete.\n(Thermal Shadow events excluded)\n\n[FLOOR] Minimum recovery gap: ${roundedMin} hours.\n[CEILING] Max endurance: ${recommendedMax} hours.\n\nUpdate your threshold settings?`)) { 
                 document.getElementById('minHours').value = roundedMin; 
                 document.getElementById('maxHours').value = recommendedMax; 
-                saveSettings();
+                saveSettings(); 
             }
         }
 
@@ -1042,48 +1081,65 @@
                 alert("Need more data points to run statistical analysis. Keep logging!"); 
                 return; 
             }
-            let releaseLogs = globalLogs.filter(l => l.volume !== 'None' && l.volume !== 'N/A');
             
-            let zaTot=0, zaSuc=0, ziTot=0, ziSuc=0;
+            let releaseLogs = globalLogs.filter(l => l.volume !== 'None' && l.volume !== 'N/A').sort((a, b) => a.timestamp - b.timestamp); 
+            
+            let validReleaseLogs = [];
+            for(let i=0; i<releaseLogs.length; i++) {
+                const shadow = calculateThermalShadow(globalLogs, releaseLogs[i].timestamp);
+                if (!shadow.isCompromised) {
+                    validReleaseLogs.push(releaseLogs[i]);
+                }
+            }
+
+            if (validReleaseLogs.length < 5) {
+                alert("Insufficient uncompromised data points after filtering out Thermal Shadow periods.");
+                return;
+            }
+
+            let zaTot=0, zaSuc=0, ziTot=0, ziSuc=0; 
             let mGaps=[], nmGaps=[];
             
-            for (let i = 0; i < releaseLogs.length - 1; i++) {
-                const cur = releaseLogs[i];
-                const gap = (cur.timestamp - releaseLogs[i + 1].timestamp) / 3600;
+            for (let i = 1; i < validReleaseLogs.length; i++) {
+                const cur = validReleaseLogs[i]; 
+                const prev = validReleaseLogs[i - 1];
+                const gap = (cur.timestamp - prev.timestamp) / 3600;
                 
-                if (cur.mode === 'Maintenance' || cur.mode === 'Clinical-Lab') {
-                    let isSuccess = (cur.volume === 'Normal' || cur.volume === 'High');
-                    if (cur.zincFlag === 1) { 
-                        zaTot++; 
-                        if (isSuccess) zaSuc++; 
-                    } else { 
-                        ziTot++; 
-                        if (isSuccess) ziSuc++; 
-                    }
+                const isZincSaturated = getSupplementSaturation(globalLogs, cur.timestamp, 'zincFlag', 21);
+                const isMacaSaturated = getSupplementSaturation(globalLogs, cur.timestamp, 'macaFlag', 21);
+                
+                if (cur.mode === 'Maintenance' || cur.mode === 'Clinical-Lab') { 
+                    let isSuccess = (cur.volume === 'Normal' || cur.volume === 'High'); 
+                    if (isZincSaturated) { zaTot++; if (isSuccess) zaSuc++; } 
+                    else { ziTot++; if (isSuccess) ziSuc++; } 
                 }
-                if (cur.macaFlag === 1) mGaps.push(gap); 
+                
+                if (isMacaSaturated) mGaps.push(gap); 
                 else nmGaps.push(gap);
             }
             
-            let msg = "💊 SUPPLEMENT EFFICACY ANALYSIS 🌿\n\n";
-            if (zaTot > 0 && ziTot > 0) {
+            let msg = "💊 BIOLOGICAL SATURATION ANALYSIS 🌿\n\n";
+            msg += "(Measuring efficacy based on cumulative 21-day buildup)\n";
+            msg += "(Thermal Shadow periods removed to prevent data corruption)\n\n";
+
+            if (zaTot > 0 && ziTot > 0) { 
                 const zaPct = Math.round((zaSuc/zaTot)*100); 
-                const ziPct = Math.round((ziSuc/ziTot)*100);
-                const diff = zaPct - ziPct;
-                msg += `[ZINC - VOLUME YIELD]\nWithout Zinc: ${ziPct}% optimal yield rate.\nWith Zinc: ${zaPct}% optimal yield rate.\n`;
-                msg += (diff > 0) ? `Result: Zinc increases optimal yield probability by +${diff}%.\n\n` : `Result: Zinc has no measurable positive effect on yield.\n\n`;
-            } else {
-                msg += `[ZINC] Insufficient baseline data to compare.\n\n`;
+                const ziPct = Math.round((ziSuc/ziTot)*100); 
+                const diff = zaPct - ziPct; 
+                msg += `[ZINC - VOLUME YIELD]\nWithout Zinc Saturation: ${ziPct}% optimal yield rate.\nWith Zinc Saturation: ${zaPct}% optimal yield rate.\n`; 
+                msg += (diff > 0) ? `Result: Zinc buildup increases optimal yield probability by +${diff}%.\n\n` : `Result: Zinc buildup has no measurable positive effect on yield.\n\n`; 
+            } else { 
+                msg += `[ZINC] Insufficient saturated baseline data to compare.\n\n`; 
             }
             
-            if (mGaps.length > 0 && nmGaps.length > 0) {
+            if (mGaps.length > 0 && nmGaps.length > 0) { 
                 const mAvg = mGaps.reduce((a,b)=>a+b,0) / mGaps.length; 
-                const nmAvg = nmGaps.reduce((a,b)=>a+b,0) / nmGaps.length;
-                const diff = nmAvg - mAvg;
-                msg += `[MACA ROOT - RECOVERY SPEED]\nWithout Maca: ${nmAvg.toFixed(1)} hours mean recovery.\nWith Maca: ${mAvg.toFixed(1)} hours mean recovery.\n`;
-                msg += (diff > 0) ? `Result: Maca accelerates recovery by ${diff.toFixed(1)} hours.\n` : `Result: Maca has no measurable positive effect on recovery speed.\n`;
-            } else {
-                msg += `[MACA] Insufficient baseline data to compare.\n`;
+                const nmAvg = nmGaps.reduce((a,b)=>a+b,0) / nmGaps.length; 
+                const diff = nmAvg - mAvg; 
+                msg += `[MACA ROOT - RECOVERY SPEED]\nWithout Maca Saturation: ${nmAvg.toFixed(1)} hours mean recovery.\nWith Maca Saturation: ${mAvg.toFixed(1)} hours mean recovery.\n`; 
+                msg += (diff > 0) ? `Result: Maca buildup accelerates recovery by ${diff.toFixed(1)} hours.\n` : `Result: Maca buildup has no measurable positive effect on recovery speed.\n`; 
+            } else { 
+                msg += `[MACA] Insufficient saturated baseline data to compare.\n`; 
             }
             
             alert(msg);
@@ -1092,21 +1148,22 @@
         function updateTelemetry(logs, now, minH, maxH) {
             let releaseLogs = logs.filter(l => l.volume !== 'None' && l.volume !== 'N/A');
             
-            if (releaseLogs.length === 0) {
+            if (releaseLogs.length === 0) { 
                 document.getElementById('hudCurrent').innerText = '--'; 
-                document.getElementById('hudRemaining').innerText = '--';
+                document.getElementById('hudRemaining').innerText = '--'; 
                 document.getElementById('hudAvg').innerText = '--'; 
                 document.getElementById('hudMax').innerText = '--'; 
-                return;
+                return; 
             }
             
-            const currentDelta = (now - releaseLogs[0].timestamp) / 3600;
-            const curEl = document.getElementById('hudCurrent');
-            curEl.innerText = currentDelta.toFixed(1) + 'h';
+            const currentDelta = (now - releaseLogs[0].timestamp) / 3600; 
+            const curEl = document.getElementById('hudCurrent'); 
+            curEl.innerText = currentDelta.toFixed(1) + 'h'; 
             curEl.style.color = (currentDelta < minH) ? '#ff9800' : '#007acc';
-
-            const remEl = document.getElementById('hudRemaining');
+            
+            const remEl = document.getElementById('hudRemaining'); 
             const remaining = maxH - currentDelta;
+            
             if (remaining > 0) { 
                 remEl.innerText = remaining.toFixed(1) + 'h'; 
                 remEl.style.color = '#007acc'; 
@@ -1114,18 +1171,73 @@
                 remEl.innerText = 'OVERDUE'; 
                 remEl.style.color = '#ff5252'; 
             }
-
+            
             if (releaseLogs.length < 2) return;
             
             let totalGap = 0, maxGap = 0;
-            for (let i = 0; i < releaseLogs.length - 1; i++) {
-                const gap = (releaseLogs[i].timestamp - releaseLogs[i+1].timestamp) / 3600;
+            for (let i = 0; i < releaseLogs.length - 1; i++) { 
+                const gap = (releaseLogs[i].timestamp - releaseLogs[i+1].timestamp) / 3600; 
                 totalGap += gap; 
-                if (gap > maxGap) maxGap = gap;
+                if (gap > maxGap) maxGap = gap; 
             }
             
-            document.getElementById('hudAvg').innerText = (totalGap / (releaseLogs.length - 1)).toFixed(1) + 'h';
+            document.getElementById('hudAvg').innerText = (totalGap / (releaseLogs.length - 1)).toFixed(1) + 'h'; 
             document.getElementById('hudMax').innerText = maxGap.toFixed(1) + 'h';
+        }
+
+        function updateHeatmap(logs) {
+            const heatmapEl = document.getElementById('heatmapGrid');
+            if (!heatmapEl) return;
+            heatmapEl.innerHTML = '';
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const days = [];
+            
+            for (let i = 364; i >= 0; i--) {
+                const d = new Date(today);
+                d.setDate(d.getDate() - i);
+                days.push(d);
+            }
+
+            const logMap = {};
+            logs.forEach(log => {
+                if (log.volume === 'None' || log.volume === 'N/A') return;
+                const d = new Date(log.timestamp * 1000);
+                const dateStr = d.getFullYear() + '-' + (d.getMonth() + 1).toString().padStart(2, '0') + '-' + d.getDate().toString().padStart(2, '0');
+                if (!logMap[dateStr]) logMap[dateStr] = [];
+                logMap[dateStr].push(log);
+            });
+
+            const firstDayOfWeek = days[0].getDay(); 
+            for (let i = 0; i < firstDayOfWeek; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'heatmap-cell empty';
+                heatmapEl.appendChild(emptyCell);
+            }
+
+            days.forEach(day => {
+                const dateStr = day.getFullYear() + '-' + (day.getMonth() + 1).toString().padStart(2, '0') + '-' + day.getDate().toString().padStart(2, '0');
+                const cell = document.createElement('div');
+                
+                let level = 0;
+                let titleText = `${dateStr}: No yield activity`;
+
+                if (logMap[dateStr] && logMap[dateStr].length > 0) {
+                    const dayLogs = logMap[dateStr];
+                    if (dayLogs.some(l => l.volume === 'High')) level = 3;
+                    else if (dayLogs.some(l => l.volume === 'Normal')) level = 2;
+                    else if (dayLogs.some(l => l.volume === 'Low')) level = 1;
+
+                    titleText = `${dateStr}: ${dayLogs.length} event(s) | Max Yield: ${level === 3 ? 'High' : level === 2 ? 'Normal' : 'Low'}`;
+                }
+
+                cell.className = `heatmap-cell level-${level}`;
+                cell.title = titleText;
+                heatmapEl.appendChild(cell);
+            });
+            
+            heatmapEl.parentElement.scrollLeft = heatmapEl.scrollWidth;
         }
 
         function updateBlackoutBanner(apptTs, now) {
@@ -1133,41 +1245,43 @@
             if (apptTs && apptTs > now) {
                 const secondsUntil = apptTs - now; 
                 const days = (secondsUntil / 86400).toFixed(1);
-                if (secondsUntil <= (5 * 86400)) {
+                if (secondsUntil <= (5 * 86400)) { 
                     banner.style.backgroundColor = '#ff9800'; 
                     banner.style.color = '#000'; 
-                    banner.style.border = 'none';
+                    banner.style.border = 'none'; 
                     banner.innerHTML = `CLINICAL BLACKOUT ACTIVE: Target T-Minus ${days} Days`; 
-                } else {
+                } else { 
                     banner.style.backgroundColor = '#0d2a3a'; 
                     banner.style.color = '#64b5f6'; 
-                    banner.style.border = '1px solid #0277bd';
+                    banner.style.border = '1px solid #0277bd'; 
                     banner.innerHTML = `📅 Clinical Baseline Scheduled in ${days} Days (Blackout begins at T-Minus 5 Days)`; 
                 }
                 banner.style.display = 'block';
-            } else {
-                banner.style.display = 'none';
+            } else { 
+                banner.style.display = 'none'; 
             }
         }
 
         function updateChart(logs) {
-            let modes = { 'Maintenance': 0, 'Playtime': 0, 'Baby-Making': 0, 'Clinical-Lab': 0 };
+            if (typeof ApexCharts === 'undefined') { throw new Error("ApexCharts library not loaded"); }
+            
+            let modes = { 'Maintenance': 0, 'Playtime': 0, 'Baby-Making': 0, 'Clinical-Lab': 0 }; 
             let vols = { 'High': 0, 'Normal': 0, 'Low': 0, 'None': 0 };
             
-            logs.forEach(l => {
-                if (modes[l.mode] !== undefined) modes[l.mode]++;
-                if (l.volume === 'None' || l.volume === 'N/A') vols['None']++;
-                else if (vols[l.volume] !== undefined) vols[l.volume]++;
+            logs.forEach(l => { 
+                if (modes[l.mode] !== undefined) modes[l.mode]++; 
+                if (l.volume === 'None' || l.volume === 'N/A') vols['None']++; 
+                else if (vols[l.volume] !== undefined) vols[l.volume]++; 
             });
-
+            
             if (modeChart) modeChart.destroy(); 
-            modeChart = new ApexCharts(document.getElementById('modeChartCanvas'), {
-                series: [modes['Maintenance'], modes['Playtime'], modes['Baby-Making'], modes['Clinical-Lab']],
-                labels: ['Maintenance', 'Playtime', 'Baby-Making', 'Clinical-Lab'],
-                colors: ['#007acc', '#9c27b0', '#4caf50', '#0277bd'],
-                chart: { type: 'donut', height: 180, width: '100%', background: 'transparent', foreColor: '#aaa' },
-                stroke: { show: true, colors: ['#1a1a1a'], width: 2 },
-                dataLabels: { enabled: false },
+            modeChart = new ApexCharts(document.getElementById('modeChartCanvas'), { 
+                series: [modes['Maintenance'], modes['Playtime'], modes['Baby-Making'], modes['Clinical-Lab']], 
+                labels: ['Maintenance', 'Playtime', 'Baby-Making', 'Clinical-Lab'], 
+                colors: ['#007acc', '#9c27b0', '#4caf50', '#546e7a'], 
+                chart: { type: 'donut', height: 180, width: '100%', background: 'transparent', foreColor: '#aaa' }, 
+                stroke: { show: true, colors: ['#1a1a1a'], width: 2 }, 
+                dataLabels: { enabled: false }, 
                 plotOptions: { 
                     pie: { 
                         donut: { 
@@ -1180,105 +1294,109 @@
                             } 
                         } 
                     } 
-                },
-                legend: { position: 'right', fontSize: '11px' }
-            });
+                }, 
+                legend: { position: 'right', fontSize: '11px' } 
+            }); 
             modeChart.render();
-
+            
             if (volChart) volChart.destroy(); 
-            volChart = new ApexCharts(document.getElementById('volumeChartCanvas'), {
-                series: [{ name: 'Sessions', data: [vols['High'], vols['Normal'], vols['Low'], vols['None']] }],
-                chart: { type: 'bar', height: 160, width: '100%', background: 'transparent', foreColor: '#aaa', toolbar: { show: false } },
-                plotOptions: { bar: { horizontal: true, borderRadius: 4, distributed: true } },
-                colors: ['#4caf50', '#007acc', '#ff9800', '#757575'],
-                dataLabels: { enabled: true, style: { colors: ['#fff'] } },
-                xaxis: { categories: ['High', 'Normal', 'Low', 'Dry'], labels: { style: { colors: '#888' } } },
-                yaxis: { labels: { style: { colors: '#888' } } },
-                grid: { borderColor: '#333', strokeDashArray: 4 },
-                legend: { show: false }
-            });
+            volChart = new ApexCharts(document.getElementById('volumeChartCanvas'), { 
+                series: [{ name: 'Sessions', data: [vols['High'], vols['Normal'], vols['Low'], vols['None']] }], 
+                chart: { type: 'bar', height: 160, width: '100%', background: 'transparent', foreColor: '#aaa', toolbar: { show: false } }, 
+                plotOptions: { bar: { horizontal: true, borderRadius: 4, distributed: true } }, 
+                colors: ['#4caf50', '#007acc', '#ff9800', '#757575'], 
+                dataLabels: { enabled: true, style: { colors: ['#fff'] } }, 
+                xaxis: { categories: ['High', 'Normal', 'Low', 'Dry'], labels: { style: { colors: '#888' } } }, 
+                yaxis: { labels: { style: { colors: '#888' } } }, 
+                grid: { borderColor: '#333', strokeDashArray: 4 }, 
+                legend: { show: false } 
+            }); 
             volChart.render();
             
-            let releaseLogs = logs.filter(l => l.volume !== 'None' && l.volume !== 'N/A');
+            let releaseLogs = logs.filter(l => l.volume !== 'None' && l.volume !== 'N/A'); 
             if (releaseLogs.length < 1) { 
                 if (myChart) { myChart.destroy(); myChart = null; } 
                 return; 
             }
             
-            let chronological = [...releaseLogs].reverse();
-            let chartData = [], discreteMarkers = [];
-            let maxTarget = parseFloat(document.getElementById('maxHours').value) || 72;
+            let chronological = [...releaseLogs].reverse(); 
+            let chartData = [], discreteMarkers = []; 
+            let maxTarget = parseFloat(document.getElementById('maxHours').value) || 72; 
             let minTarget = parseFloat(document.getElementById('minHours').value) || 24;
-
-            for (let i = 0; i < chronological.length; i++) {
-                let current = chronological[i];
-                let gapHours = (i === 0) ? maxTarget : (current.timestamp - chronological[i - 1].timestamp) / 3600;
-
-                let pColor = '#007acc';
-                if (current.mode === 'Playtime') pColor = '#9c27b0';
-                else if (current.mode === 'Baby-Making') pColor = '#4caf50';
-                else if (current.mode === 'Clinical-Lab') pColor = '#0277bd';
-
-                chartData.push({ x: current.timestamp * 1000, y: parseFloat(gapHours.toFixed(1)), logData: current, isInitialFaked: (i === 0) });
-                discreteMarkers.push({ seriesIndex: 0, dataPointIndex: i, fillColor: pColor, strokeColor: '#1e1e1e', size: 5 });
+            
+            for (let i = 0; i < chronological.length; i++) { 
+                let current = chronological[i]; 
+                let gapHours = (i === 0) ? maxTarget : (current.timestamp - chronological[i - 1].timestamp) / 3600; 
+                let pColor = '#007acc'; 
+                if (current.mode === 'Playtime') pColor = '#9c27b0'; 
+                else if (current.mode === 'Baby-Making') pColor = '#4caf50'; 
+                else if (current.mode === 'Clinical-Lab') pColor = '#546e7a'; 
+                
+                chartData.push({ x: current.timestamp * 1000, y: parseFloat(gapHours.toFixed(1)), logData: current, isInitialFaked: (i === 0) }); 
+                discreteMarkers.push({ seriesIndex: 0, dataPointIndex: i, fillColor: pColor, strokeColor: '#1e1e1e', size: 5 }); 
             }
-
+            
             if (myChart) myChart.destroy(); 
             myChart = new ApexCharts(document.getElementById('chartCanvas'), {
-                series: [{ name: 'Recovery Gap', data: chartData }],
-                chart: { type: 'area', height: '100%', width: '100%', foreColor: '#aaa', background: 'transparent', toolbar: { show: true }, animations: { enabled: false } },
-                colors: ['#555'],
-                fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.3, opacityTo: 0.05, stops: [0, 100] } },
-                dataLabels: { enabled: false },
-                stroke: { curve: 'smooth', width: 2, colors: ['#555'] },
-                markers: { size: 5, colors: ['#1e1e1e'], strokeColors: '#333', strokeWidth: 2, discrete: discreteMarkers, hover: { size: 7 } },
-                xaxis: { type: 'datetime', tooltip: { enabled: false } },
-                yaxis: { title: { text: 'Gap (Hours)', style: { color: '#888' } }, min: 0 },
+                series: [{ name: 'Recovery Gap', data: chartData }], 
+                chart: { type: 'area', height: '100%', width: '100%', foreColor: '#aaa', background: 'transparent', toolbar: { show: true }, animations: { enabled: false } }, 
+                colors: ['#555'], 
+                fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.3, opacityTo: 0.05, stops: [0, 100] } }, 
+                dataLabels: { enabled: false }, 
+                stroke: { curve: 'smooth', width: 2, colors: ['#555'] }, 
+                markers: { size: 5, colors: ['#1e1e1e'], strokeColors: '#333', strokeWidth: 2, discrete: discreteMarkers, hover: { size: 7 } }, 
+                xaxis: { type: 'datetime', tooltip: { enabled: false } }, 
+                yaxis: { title: { text: 'Gap (Hours)', style: { color: '#888' } }, min: 0 }, 
                 annotations: { yAxis: [
-                    { y: minTarget, borderColor: '#d32f2f', strokeDashArray: 4, label: { text: 'Min Rest', style: { color: '#fff', background: '#d32f2f' } } },
+                    { y: minTarget, borderColor: '#d32f2f', strokeDashArray: 4, label: { text: 'Min Rest', style: { color: '#fff', background: '#d32f2f' } } }, 
                     { y: maxTarget, borderColor: '#f57c00', strokeDashArray: 4, label: { text: 'Max Limit', style: { color: '#fff', background: '#f57c00' } } }
                 ]},
-                tooltip: {
+                tooltip: { 
                     custom: function({series, seriesIndex, dataPointIndex, w}) {
                         const item = w.globals.initialSeries[seriesIndex].data[dataPointIndex]; 
-                        const log = item.logData;
+                        const log = item.logData; 
                         const dateStr = new Date(log.timestamp * 1000).toLocaleString();
                         
-                        let lines = `<div><strong>Mode:</strong> ${log.mode}</div>`;
+                        let lines = `<div><strong>Mode:</strong> ${log.mode}</div>`; 
                         lines += `<div><strong>${log.mode === 'Baby-Making' ? 'Est. ' : ''}Volume:</strong> ${log.volume}</div>`;
                         
-                        let flags = [];
-                        if (log.heatFlag === 1) flags.push(`⚠️ Heat`);
-                        if (log.zincFlag === 1) flags.push(`💊 Zinc`);
-                        if (log.macaFlag === 1) flags.push(`🌿 Maca`);
+                        const isZincSat = getSupplementSaturation(logs, log.timestamp, 'zincFlag', 21);
+                        const isMacaSat = getSupplementSaturation(logs, log.timestamp, 'macaFlag', 21);
+                        const currentShadow = calculateThermalShadow(logs, log.timestamp);
+
+                        let flags = []; 
+                        if (log.heatFlag > 0) flags.push(`⚠️ Temp L${log.heatFlag}`); 
+                        if (currentShadow.isCompromised) flags.push(`<span style="color:#f57c00;">🔥 Shadow Active</span>`);
+                        if (log.zincFlag === 1) flags.push(`💊 Zinc Dose`); 
+                        if (isZincSat) flags.push(`🩸 Zinc Saturation`); 
+                        if (log.macaFlag === 1) flags.push(`🌿 Maca Dose`); 
+                        if (isMacaSat) flags.push(`🧬 Maca Saturation`); 
+                        
                         if (flags.length > 0) lines += `<hr style="border:0; border-top:1px solid #444; margin:5px 0;"><div>${flags.join(' | ')}</div>`;
-
-                        if (log.mode === 'Clinical-Lab' && (log.clinicalVol > 0 || log.concentration > 0 || log.motility > 0)) {
-                            lines += `<hr style="border:0; border-top:1px solid #444; margin:5px 0;"><div><strong style="color:#64b5f6;">Lab Metrics:</strong></div>`;
-                            if (log.clinicalVol > 0) lines += `<div>Vol: ${log.clinicalVol} mL</div>`;
-                            if (log.concentration > 0) lines += `<div>Conc: ${log.concentration} M/mL</div>`;
-                            if (log.motility > 0) lines += `<div>Tot Motility: ${log.motility}%</div>`;
-                            if (log.progMotility > 0) lines += `<div>Prog Motility: ${log.progMotility}%</div>`;
-                            if (log.morphology > 0) lines += `<div>Morphology: ${log.morphology}%</div>`;
-                            if (log.phLevel > 0) lines += `<div>pH Level: ${log.phLevel}</div>`;
+                        
+                        if (log.mode === 'Clinical-Lab' && (log.clinicalVol > 0 || log.concentration > 0 || log.motility > 0)) { 
+                            lines += `<hr style="border:0; border-top:1px solid #444; margin:5px 0;"><div><strong style="color:#90a4ae;">Lab Metrics:</strong></div>`; 
+                            if (log.clinicalVol > 0) lines += `<div>Vol: ${log.clinicalVol} mL</div>`; 
+                            if (log.concentration > 0) lines += `<div>Conc: ${log.concentration} M/mL</div>`; 
+                            if (log.motility > 0) lines += `<div>Tot Motility: ${log.motility}%</div>`; 
+                            if (log.progMotility > 0) lines += `<div>Prog Motility: ${log.progMotility}%</div>`; 
+                            if (log.morphology > 0) lines += `<div>Morphology: ${log.morphology}%</div>`; 
+                            if (log.phLevel > 0) lines += `<div>pH Level: ${log.phLevel}</div>`; 
                         }
-
-                        let gapDisplay = item.isInitialFaked 
-                            ? `<strong style="color:#f57c00;">Gap:</strong> Baseline Start` 
-                            : `<strong style="color:#007acc;">Gap:</strong> ${item.y} hrs`;
-                            
-                        return `<div class="apexcharts-tooltip-title" style="padding:5px 10px; background:#1e1e1e; border-bottom:1px solid #333;">${dateStr}</div>
-                                <div class="chart-tooltip-content" style="padding:10px; font-size:12px;"><div style="margin-bottom:4px;">${gapDisplay}</div>${lines}</div>`;
+                        
+                        let gapDisplay = item.isInitialFaked ? `<strong style="color:#f57c00;">Gap:</strong> Baseline Start` : `<strong style="color:#007acc;">Gap:</strong> ${item.y} hrs`;
+                        
+                        return `<div class="apexcharts-tooltip-title" style="padding:5px 10px; background:#1e1e1e; border-bottom:1px solid #333;">${dateStr}</div><div class="chart-tooltip-content" style="padding:10px; font-size:12px;"><div style="margin-bottom:4px;">${gapDisplay}</div>${lines}</div>`;
                     }
                 }
             });
             myChart.render();
         }
 
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
+        document.addEventListener('keydown', (e) => { 
+            if (e.key === 'Escape') { 
                 document.getElementById('appContainer').classList.toggle('stealth-active'); 
-            }
+            } 
         });
     </script>
 </body>
